@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Wallet } from 'lucide-react';
+import React from 'react';
 import { useAccount } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import WalletConnectButton from './WalletConnectButton';
 
 interface ConnectWalletButtonProps {
   className?: string;
@@ -12,8 +10,6 @@ interface ConnectWalletButtonProps {
 
 const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
   className = '',
-  size = 'default',
-  variant = 'default'
 }) => {
   const { isConnected } = useAccount();
 
@@ -24,7 +20,7 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
 
   return (
     <div className={className}>
-      <ConnectButton />
+      <WalletConnectButton />
     </div>
   );
 };
