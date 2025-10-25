@@ -1,6 +1,6 @@
-import { useAccount, useWalletClient } from 'wagmi';
-import { useCallback, useState } from 'react';
-import { toast } from 'sonner';
+import { useAccount, useWalletClient } from "wagmi";
+import { useCallback, useState } from "react";
+import { toast } from "sonner";
 import {
   createPost,
   proposeSell,
@@ -13,11 +13,11 @@ import {
   isPostForSale,
   getSellProposals,
   getAllPostsForSale,
-  getPostPrice
-} from '@/services/contract';
-import { storeOnIPFS, PostMetadata } from '@/services/ipfs';
-import type { Post } from '@/context/AppContext';
-import { NotificationService } from '@/services/notificationService';
+  getPostPrice,
+} from "@/services/contract";
+import { storeOnIPFS, PostMetadata } from "@/services/ipfs";
+import type { Post } from "@/context/AppContext";
+import { NotificationService } from "@/services/notificationService";
 
 export interface PostNFTState {
   isLoading: boolean;
@@ -30,243 +30,304 @@ export const usePostNFT = () => {
   const [state, setState] = useState<PostNFTState>({ isLoading: false });
 
   const setLoading = (isLoading: boolean) => {
-    setState(prev => ({ ...prev, isLoading }));
+    setState((prev) => ({ ...prev, isLoading }));
   };
 
   const setError = (error?: string) => {
-    setState(prev => ({ ...prev, error }));
+    setState((prev) => ({ ...prev, error }));
   };
 
   // Mint a new post as NFT
-  const mintPost = useCallback(async (content: string, imageDataUrl?: string, onSuccess?: () => void): Promise<string | null> => {
+  const mintPost = useCallback(
+    async (
+      content: string,
+      imageDataUrl?: string,
+      onSuccess?: () => void
+    ): Promise<string | null> => {
+      if (!address) {
+        toast.error("Please connect your wallet first");
+        return null;
+      }
 
-    if (!address) {
-      toast.error('Please connect your wallet first');
-      return null;
-    }
+      if (!walletClient) {
+        // walletClient may still be undefined even when address is present (race with provider initialization)
+        toast.error("Wallet client not ready. Please try again in a moment.");
+        return null;
+      }
 
-    try {
-      setLoading(true);
-      setError(undefined);
-
-      // Check if user can post today
-      // const canPost = await canUserPostToday(address);
-      // if (!canPost) {
-      //   toast.error('You have already posted today. Come back tomorrow!');
-      //   return null;
-      // }
-
-      // Prepare metadata for IPFS
-      const metadata: PostMetadata = {
-        content: content || (imageDataUrl ? '' : 'Post content'), // Allow empty content if there's an image
-        timestamp: Date.now(),
-        author: address,
-        version: '1.0',
-        image: imageDataUrl // Include image data if provided
-      };
-
-      // Store on IPFS
-      const ipfsHash = await storeOnIPFS(metadata);
-
-      // Mint NFT with IPFS hash (price = 0 for regular posts)
-      const txHash = await createPost(walletClient, ipfsHash, 0);
-
-      toast.success('Post minted successfully! 🎉 Redirecting to home...');
-
-      // Create notification for successful post creation
       try {
-        // Extract token ID from transaction hash or use a placeholder
-        const tokenId = txHash.slice(-6); // Use last 6 chars as token ID placeholder
-        await NotificationService.createPostCreatedNotification(
-          address,
-          tokenId
-        );
-      } catch (notificationError) {
-        console.error('Error creating post notification:', notificationError);
-        // Don't fail the whole operation for notification error
-      }
+        setLoading(true);
+        setError(undefined);
 
-      // Call success callback to redirect to home
-      if (onSuccess) {
-        setTimeout(() => {
-          onSuccess();
-        }, 1500); // Small delay to show success message
-      }
+        // Check if user can post today
+        // const canPost = await canUserPostToday(address);
+        // if (!canPost) {
+        //   toast.error('You have already posted today. Come back tomorrow!');
+        //   return null;
+        // }
 
-      return txHash;
-    } catch (err: unknown) {
-      console.error('Error in mintPost:', err);
-      const errorMessage = (err as Error)?.message || 'Failed to mint post';
-      console.error('Error message:', errorMessage);
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [address]);
+        // Prepare metadata for IPFS
+        const metadata: PostMetadata = {
+          content: content || (imageDataUrl ? "" : "Post content"), // Allow empty content if there's an image
+          timestamp: Date.now(),
+          author: address,
+          version: "1.0",
+          image: imageDataUrl, // Include image data if provided
+        };
+
+        // Store on IPFS
+        const ipfsHash = await storeOnIPFS(metadata);
+
+        // Mint NFT with IPFS hash (price = 0 for regular posts)
+        const txHash = await createPost(walletClient, ipfsHash, 0);
+
+        toast.success("Post minted successfully! 🎉 Redirecting to home...");
+
+        // Create notification for successful post creation
+        try {
+          // Extract token ID from transaction hash or use a placeholder
+          const tokenId = txHash.slice(-6); // Use last 6 chars as token ID placeholder
+          await NotificationService.createPostCreatedNotification(
+            address,
+            tokenId
+          );
+        } catch (notificationError) {
+          console.error("Error creating post notification:", notificationError);
+          // Don't fail the whole operation for notification error
+        }
+
+        // Call success callback to redirect to home
+        if (onSuccess) {
+          setTimeout(() => {
+            onSuccess();
+          }, 1500); // Small delay to show success message
+        }
+
+        return txHash;
+      } catch (err: unknown) {
+        console.error("Error in mintPost:", err);
+        const errorMessage = (err as Error)?.message || "Failed to mint post";
+        console.error("Error message:", errorMessage);
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [address, walletClient]
+  );
 
   // Propose a sell
-  const proposePostSell = useCallback(async (tokenId: string, price: number): Promise<string | null> => {
-    if (!address) {
-      toast.error('Please connect your wallet first');
-      return null;
-    }
-
-    if (price <= 0) {
-      toast.error('Price must be greater than 0');
-      return null;
-    }
-
-    try {
-      setLoading(true);
-      setError(undefined);
-
-      const txHash = await proposeSell(walletClient, tokenId, price);
-      toast.success('Sell proposal submitted! 💰');
-
-      // Create notification for NFT listing
-      try {
-        await NotificationService.createNFTListedNotification(
-          address,
-          String(tokenId),
-          String(price)
-        );
-      } catch (notificationError) {
-        console.error('Error creating listing notification:', notificationError);
-        // Don't fail the whole operation for notification error
+  const proposePostSell = useCallback(
+    async (tokenId: string, price: number): Promise<string | null> => {
+      if (!address) {
+        toast.error("Please connect your wallet first");
+        return null;
       }
 
-      return txHash;
-    } catch (err: unknown) {
-      const errorMessage = (err as Error)?.message || 'Failed to propose sell';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [address]);
+      if (price <= 0) {
+        toast.error("Price must be greater than 0");
+        return null;
+      }
+
+      try {
+        setLoading(true);
+        setError(undefined);
+
+        if (!walletClient) {
+          toast.error("Wallet client not ready. Please try again in a moment.");
+          return null;
+        }
+
+        const txHash = await proposeSell(walletClient, tokenId, price);
+        toast.success("Sell proposal submitted! 💰");
+
+        // Create notification for NFT listing
+        try {
+          await NotificationService.createNFTListedNotification(
+            address,
+            String(tokenId),
+            String(price)
+          );
+        } catch (notificationError) {
+          console.error(
+            "Error creating listing notification:",
+            notificationError
+          );
+          // Don't fail the whole operation for notification error
+        }
+
+        return txHash;
+      } catch (err: unknown) {
+        const errorMessage =
+          (err as Error)?.message || "Failed to propose sell";
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [address, walletClient]
+  );
 
   // Accept and reject sell functions removed - direct buying only
 
   // Buy a post directly
-  const buyPostDirect = useCallback(async (tokenId: string): Promise<string | null> => {
-    if (!address) {
-      toast.error('Please connect your wallet first');
-      return null;
-    }
+  const buyPostDirect = useCallback(
+    async (tokenId: string): Promise<string | null> => {
+      if (!address) {
+        toast.error("Please connect your wallet first");
+        return null;
+      }
 
-    try {
-      setLoading(true);
-      setError(undefined);
+      try {
+        setLoading(true);
+        setError(undefined);
 
-      const txHash = await buyPost(walletClient, tokenId);
-      // Toast handling is done in buyPost function
-      return txHash;
-    } catch (err: unknown) {
-      const errorMessage = (err as Error)?.message || 'Failed to buy post';
-      setError(errorMessage);
-      // Error toast is handled in buyPost function
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [address]);
+        if (!walletClient) {
+          toast.error("Wallet client not ready. Please try again in a moment.");
+          return null;
+        }
+
+        const txHash = await buyPost(walletClient, tokenId);
+        // Toast handling is done in buyPost function
+        return txHash;
+      } catch (err: unknown) {
+        const errorMessage = (err as Error)?.message || "Failed to buy post";
+        setError(errorMessage);
+        // Error toast is handled in buyPost function
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [address, walletClient]
+  );
 
   // Cancel a sell proposal
-  const cancelSellProposalFunc = useCallback(async (proposalId: string): Promise<string | null> => {
-    if (!address) {
-      toast.error('Please connect your wallet first');
-      return null;
-    }
+  const cancelSellProposalFunc = useCallback(
+    async (proposalId: string): Promise<string | null> => {
+      if (!address) {
+        toast.error("Please connect your wallet first");
+        return null;
+      }
 
-    try {
-      setLoading(true);
-      setError(undefined);
+      try {
+        setLoading(true);
+        setError(undefined);
 
-      const txHash = await cancelSell(walletClient, proposalId);
-      toast.success('Sell proposal cancelled');
-      return txHash;
-    } catch (err: unknown) {
-      const errorMessage = (err as Error)?.message || 'Failed to cancel sell proposal';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [address]);
+        if (!walletClient) {
+          toast.error("Wallet client not ready. Please try again in a moment.");
+          return null;
+        }
+
+        const txHash = await cancelSell(walletClient, proposalId);
+        toast.success("Sell proposal cancelled");
+        return txHash;
+      } catch (err: unknown) {
+        const errorMessage =
+          (err as Error)?.message || "Failed to cancel sell proposal";
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [address, walletClient]
+  );
 
   // Fetch posts
-  const fetchAllPosts = useCallback(async (offset: number = 0, limit: number = 20): Promise<Post[]> => {
-    try {
-      return await getAllPosts(offset, limit);
-    } catch (err: unknown) {
-      const errorMessage = (err as Error)?.message || 'Failed to fetch posts';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return [];
-    }
-  }, []);
+  const fetchAllPosts = useCallback(
+    async (offset: number = 0, limit: number = 20): Promise<Post[]> => {
+      try {
+        return await getAllPosts(offset, limit);
+      } catch (err: unknown) {
+        const errorMessage = (err as Error)?.message || "Failed to fetch posts";
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return [];
+      }
+    },
+    []
+  );
 
-  const fetchUserPosts = useCallback(async (userAddress: string): Promise<Post[]> => {
-    try {
-      return await getUserPosts(userAddress as `0x${string}`);
-    } catch (err: unknown) {
-      const errorMessage = (err as Error)?.message || 'Failed to fetch user posts';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return [];
-    }
-  }, []);
+  const fetchUserPosts = useCallback(
+    async (userAddress: string): Promise<Post[]> => {
+      try {
+        return await getUserPosts(userAddress as `0x${string}`);
+      } catch (err: unknown) {
+        const errorMessage =
+          (err as Error)?.message || "Failed to fetch user posts";
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return [];
+      }
+    },
+    []
+  );
 
-  const fetchPost = useCallback(async (tokenId: string): Promise<Post | null> => {
-    try {
-      return await getPostByTokenId(tokenId);
-    } catch (err: unknown) {
-      const errorMessage = (err as Error)?.message || 'Failed to fetch post';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
-    }
-  }, []);
+  const fetchPost = useCallback(
+    async (tokenId: string): Promise<Post | null> => {
+      try {
+        return await getPostByTokenId(tokenId);
+      } catch (err: unknown) {
+        const errorMessage = (err as Error)?.message || "Failed to fetch post";
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return null;
+      }
+    },
+    []
+  );
 
   // Check functions
-  const checkCanPostToday = useCallback(async (userAddress?: string): Promise<boolean> => {
-    const addressToCheck = userAddress || address;
-    if (!addressToCheck) return false;
+  const checkCanPostToday = useCallback(
+    async (userAddress?: string): Promise<boolean> => {
+      const addressToCheck = userAddress || address;
+      if (!addressToCheck) return false;
 
-    try {
-      return await canUserPostToday(addressToCheck as `0x${string}`);
-    } catch (err: unknown) {
-      console.error('Failed to check if user can post today:', err);
-      return false;
-    }
-  }, [address]);
+      try {
+        return await canUserPostToday(addressToCheck as `0x${string}`);
+      } catch (err: unknown) {
+        console.error("Failed to check if user can post today:", err);
+        return false;
+      }
+    },
+    [address]
+  );
 
-  const checkIsPostSwappable = useCallback(async (tokenId: string): Promise<boolean> => {
-    try {
-      return await isPostForSale(tokenId);
-    } catch (err: unknown) {
-      console.error('Failed to check if post is for sale:', err);
-      return false;
-    }
-  }, []);
+  const checkIsPostSwappable = useCallback(
+    async (tokenId: string): Promise<boolean> => {
+      try {
+        return await isPostForSale(tokenId);
+      } catch (err: unknown) {
+        console.error("Failed to check if post is for sale:", err);
+        return false;
+      }
+    },
+    []
+  );
 
-  const fetchSwapProposals = useCallback(async (userAddress?: string): Promise<any[]> => {
-    const addressToCheck = userAddress || address;
-    if (!addressToCheck) return [];
+  const fetchSwapProposals = useCallback(
+    async (userAddress?: string): Promise<any[]> => {
+      const addressToCheck = userAddress || address;
+      if (!addressToCheck) return [];
 
-    try {
-      return await getSellProposals(addressToCheck as `0x${string}`);
-    } catch (err: unknown) {
-      const errorMessage = (err as Error)?.message || 'Failed to fetch sell proposals';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return [];
-    }
-  }, [address]);
+      try {
+        return await getSellProposals(addressToCheck as `0x${string}`);
+      } catch (err: unknown) {
+        const errorMessage =
+          (err as Error)?.message || "Failed to fetch sell proposals";
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return [];
+      }
+    },
+    [address]
+  );
 
   return {
     ...state,
