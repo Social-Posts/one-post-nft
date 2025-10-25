@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Wallet, LogOut, Plus } from 'lucide-react';
 import { useAccount, useDisconnect } from 'wagmi';
-import UnifiedWalletModal from '../Wallet/UnifiedWalletModal';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
 import onePostNftLogo from '@/Images/onepostnft_image.png';
 
 interface HeaderProps {
@@ -15,7 +15,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onCreatePost, canCreatePost }) => {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
-  const [showWalletModal, setShowWalletModal] = useState(false);
+  const { openConnectModal } = useConnectModal();
 
   const truncateAddress = (addr: `0x${string}`) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -67,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({ onCreatePost, canCreatePost }) => {
                   </Button>
                 </div>
               ) : (
-                <Button onClick={() => setShowWalletModal(true)}>
+                <Button onClick={() => openConnectModal?.()}>
                   <Wallet className="w-4 h-4 mr-2" />
                   Connect Wallet
                 </Button>
@@ -76,10 +76,6 @@ const Header: React.FC<HeaderProps> = ({ onCreatePost, canCreatePost }) => {
           </div>
         </div>
       </Card>
-      <UnifiedWalletModal
-        isOpen={showWalletModal}
-        onClose={() => setShowWalletModal(false)}
-      />
     </>
   );
 };

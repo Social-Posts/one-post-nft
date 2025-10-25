@@ -1,13 +1,15 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Wallet, Sparkles, ShoppingCart, MessageCircle, User, Heart, Tag } from 'lucide-react';
 import { useGuestBrowsing } from '@/context/GuestBrowsingContext';
-import UnifiedWalletModal from './UnifiedWalletModal';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
+import { useAccount } from 'wagmi';
 
 const WalletPrompt: React.FC = () => {
   const { walletPrompt, hideWalletPrompt } = useGuestBrowsing();
-  const [showWalletSelection, setShowWalletSelection] = useState(false);
+  const { openConnectModal } = useConnectModal();
+  const { isConnected } = useAccount();
 
   const getActionDetails = (action: string) => {
     const actionMap: Record<string, { title: string; description: string; icon: React.ReactNode }> = {
@@ -63,11 +65,10 @@ const WalletPrompt: React.FC = () => {
   const actionDetails = getActionDetails(walletPrompt.action);
 
   const handleConnectWallet = () => {
-    setShowWalletSelection(true);
+    openConnectModal?.();
   };
 
   const handleWalletConnected = useCallback(() => {
-    setShowWalletSelection(false);
     // Call the success callback if provided
     if (walletPrompt.onSuccess) {
       walletPrompt.onSuccess();
@@ -75,9 +76,12 @@ const WalletPrompt: React.FC = () => {
     hideWalletPrompt();
   }, [walletPrompt, hideWalletPrompt]);
 
-  const handleCloseWalletSelection = useCallback(() => {
-    setShowWalletSelection(false);
-  }, []);
+  useEffect(() => {
+    if (isConnected && walletPrompt.isVisible) {
+      handleWalletConnected();
+    }
+  }, [isConnected, walletPrompt.isVisible, handleWalletConnected]);
+
 
   return (
     <>
@@ -135,13 +139,6 @@ const WalletPrompt: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      <UnifiedWalletModal
-        isOpen={showWalletSelection}
-        onClose={handleCloseWalletSelection}
-        onSuccess={handleWalletConnected}
-        title="Connect Wallet"
-        description="Connect your wallet to continue with this action"
-      />
     </>
   );
 };

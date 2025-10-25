@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useNavigationSwipeActions } from '@/hooks/useSwipeGestures';
 import { useAccount } from 'wagmi';
-import UnifiedWalletModal from '../Wallet/UnifiedWalletModal';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
 import onePostNftLogo from '@/Images/onepostnft_image.png';
 
 interface MobileNavigationProps {
@@ -36,8 +36,8 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   chatCount,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showWalletModal, setShowWalletModal] = useState(false);
   const { isConnected } = useAccount();
+  const { openConnectModal } = useConnectModal();
 
   const navigationItems = [
     { id: 'feed', label: 'Home', icon: Home },
@@ -175,7 +175,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
                 {!isConnected && (
                   <Button
                     variant="default"
-                    onClick={() => setShowWalletModal(true)}
+                    onClick={() => openConnectModal?.()}
                     className="w-full justify-start bg-primary text-primary-foreground hover:bg-primary/90 animate-pulse-glow"
                   >
                     <Wallet className="w-4 h-4 mr-3" />
@@ -263,13 +263,6 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
       {/* Bottom padding for mobile navigation */}
       <div className="h-20 md:hidden" />
 
-      <UnifiedWalletModal
-        isOpen={showWalletModal}
-        onClose={() => setShowWalletModal(false)}
-        onSuccess={() => setShowWalletModal(false)}
-        title="Connect Wallet"
-        description="Choose a wallet to connect to the platform"
-      />
     </>
   );
 };
