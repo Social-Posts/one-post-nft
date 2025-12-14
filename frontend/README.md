@@ -26,6 +26,25 @@ These instructions will get you a copy of the project up and running on your loc
    npm install
    ```
 
+
+### Setting Up Supabase
+
+The application uses **Supabase** for real-time chat and user data storage.
+
+1. Create a project at [supabase.com](https://supabase.com)
+2. Get your API credentials from **Settings > API**:
+   - `VITE_SUPABASE_URL`: Your project URL
+   - `VITE_SUPABASE_ANON_KEY`: Your anonymous public key
+3. Copy `.env.example` to `.env.local` and fill in your credentials:
+   ```sh
+   cp .env.example .env.local
+   ```
+   Then edit `.env.local` with your actual Supabase credentials:
+   ```env
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your_anon_key_here
+   ```
+
 ### Environment Configuration
 
 Create a `.env.local` file in the `frontend` directory with the following variables:
@@ -40,6 +59,7 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 **Note:** If `VITE_CONTRACT_ADDRESS` is not set, the app will use a default address. Update it with your deployed contract address when ready.
+
 
 ### Running the Development Server
 
