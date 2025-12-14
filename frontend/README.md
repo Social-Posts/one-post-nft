@@ -26,6 +26,7 @@ These instructions will get you a copy of the project up and running on your loc
    npm install
    ```
 
+
 ### Setting Up Supabase
 
 The application uses **Supabase** for real-time chat and user data storage.
@@ -43,6 +44,22 @@ The application uses **Supabase** for real-time chat and user data storage.
    VITE_SUPABASE_URL=https://your-project.supabase.co
    VITE_SUPABASE_ANON_KEY=your_anon_key_here
    ```
+
+### Environment Configuration
+
+Create a `.env.local` file in the `frontend` directory with the following variables:
+
+```env
+# Contract address for OnePostNFT (Base Sepolia or Base Mainnet)
+VITE_CONTRACT_ADDRESS=0x987029D7a894FcbDdD9e819fF177c0D44CCaF0Ce
+
+# Supabase configuration
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+**Note:** If `VITE_CONTRACT_ADDRESS` is not set, the app will use a default address. Update it with your deployed contract address when ready.
+
 
 ### Running the Development Server
 
