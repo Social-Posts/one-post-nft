@@ -13,6 +13,12 @@ export type ChatUser = {
   online: boolean;
 };
 
+export type OnlinePresence = {
+  user_address: string;
+  last_seen: string;
+  status: 'online' | 'offline' | 'away';
+};
+
 export type Message = {
   id: string;
   senderId: string;
@@ -26,11 +32,112 @@ export type Chat = Database["public"]["Tables"]["chats"]["Row"];
 export type MessageRow = Database["public"]["Tables"]["messages"]["Row"];
 export type Like = Database["public"]["Tables"]["likes"]["Row"];
 
+// Presence tracking
+const PRESENCE_CHANNEL = 'user_presence';
+const PRESENCE_HEARTBEAT_INTERVAL = 30000; // 30 seconds
+
 // Chat Service Functions
 export class ChatService {
+  private static presenceChannels: Map<string, ReturnType<typeof supabase.channel>> = new Map();
+  private static heartbeatIntervals: Map<string, NodeJS.Timeout> = new Map();
+
   // Initialize user context for RLS policies
   static async initializeUser(userAddress: string) {
     await setUserContext(userAddress);
+  }
+
+  /**
+   * Subscribe to online status for a user
+   * Broadcasts presence updates to Supabase and sets up heartbeat
+   */
+  static async subscribeToOnlineStatus(userAddress: string, onStatusChange?: (online: boolean) => void) {
+    const channelName = `${PRESENCE_CHANNEL}:${userAddress.toLowerCase()}`;
+    
+    // Create presence channel
+    const channel = supabase.channel(channelName, {
+      config: {
+        presence: {
+          key: userAddress.toLowerCase(),
+        },
+      },
+    });
+
+    // Subscribe to presence updates
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const isOnline = Object.keys(state).length > 0;
+        onStatusChange?.(isOnline);
+      })
+      .on('presence', { event: 'join' }, () => {
+        onStatusChange?.(true);
+      })
+      .on('presence', { event: 'leave' }, () => {
+        onStatusChange?.(false);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          // Broadcast presence
+          await channel.track({
+            user_address: userAddress.toLowerCase(),
+            last_seen: new Date().toISOString(),
+            status: 'online',
+          });
+
+          // Start heartbeat to keep presence alive
+          const interval = setInterval(async () => {
+            await channel.track({
+              user_address: userAddress.toLowerCase(),
+              last_seen: new Date().toISOString(),
+              status: 'online',
+            });
+          }, PRESENCE_HEARTBEAT_INTERVAL);
+
+          this.heartbeatIntervals.set(userAddress, interval);
+        }
+      });
+
+    this.presenceChannels.set(userAddress, channel);
+  }
+
+  /**
+   * Unsubscribe from online status tracking
+   */
+  static async unsubscribeFromOnlineStatus(userAddress: string) {
+    const channel = this.presenceChannels.get(userAddress);
+    if (channel) {
+      await channel.unsubscribe();
+      this.presenceChannels.delete(userAddress);
+    }
+
+    const interval = this.heartbeatIntervals.get(userAddress);
+    if (interval) {
+      clearInterval(interval);
+      this.heartbeatIntervals.delete(userAddress);
+    }
+  }
+
+  /**
+   * Check if a specific user is online
+   */
+  static async isUserOnline(userAddress: string): Promise<boolean> {
+    const channelName = `${PRESENCE_CHANNEL}:${userAddress.toLowerCase()}`;
+    const channel = supabase.channel(channelName);
+    
+    return new Promise((resolve) => {
+      channel.on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const isOnline = Object.keys(state).length > 0;
+        resolve(isOnline);
+        channel.unsubscribe();
+      }).subscribe();
+
+      // Timeout if no response in 5 seconds
+      setTimeout(() => {
+        resolve(false);
+        channel.unsubscribe();
+      }, 5000);
+    });
   }
 
   // Get or create a chat between two users
@@ -90,7 +197,7 @@ export class ChatService {
       throw new Error(`Failed to fetch chats: ${error.message}`);
     }
 
-    // Transform to ChatUser format with unread counts
+    // Transform to ChatUser format with unread counts and online status
     const chatUsers = await Promise.all(
       chats.map(async (chat) => {
         const otherParticipant =
@@ -104,15 +211,18 @@ export class ChatService {
           userAddress
         );
 
+        // Check if user is online
+        const isOnline = await this.isUserOnline(otherParticipant);
+
         return {
           id: chat.id,
           name: `User ${otherParticipant.slice(-3)}.base.eth`,
           address: otherParticipant,
           avatar: "/src/Images/placeholder.svg",
           lastMessage: chat.last_message || "No messages yet",
-          timestamp: chat.last_message_at || new Date().toISOString(), // Keep raw ISO timestamp for real-time formatting
+          timestamp: chat.last_message_at || new Date().toISOString(),
           unread: unreadCount,
-          online: false, // TODO: Implement online status
+          online: isOnline,
         };
       })
     );
