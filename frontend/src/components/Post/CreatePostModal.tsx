@@ -42,6 +42,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
   } = useCamera();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const MAX_CHARS = 280;
   const remainingChars = MAX_CHARS - content.length;
@@ -57,6 +58,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
       stopCamera();
     }
   }, [activeTab]);
+
+  // Focus the textarea when the modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => textareaRef.current?.focus(), 0);
+    }
+  }, [isOpen]);
 
   const handleSubmit = async () => {
 
@@ -175,13 +183,18 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
 
           <TabsContent value="text" className="space-y-4">
             <div className="relative">
+              <label htmlFor="create-post-content" className="sr-only">Post content</label>
               <Textarea
+                id="create-post-content"
+                ref={textareaRef}
                 placeholder="What's on your mind today? This post will become your unique NFT..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 className="min-h-[120px] resize-none border-border bg-background"
                 maxLength={MAX_CHARS}
+                aria-describedby="create-post-desc create-post-chars"
               />
+              <p id="create-post-desc" className="sr-only">You may add text or an image to mint as an NFT. Maximum {MAX_CHARS} characters.</p>
 
               <div className="flex items-center justify-between mt-2">
                 <div className="flex items-center gap-2">
@@ -190,18 +203,21 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    aria-expanded={showEmojiPicker}
+                    aria-controls="emoji-picker"
+                    aria-label={showEmojiPicker ? 'Close emoji picker' : 'Open emoji picker'}
                   >
                     <Smile className="w-4 h-4" />
                   </Button>
                 </div>
 
-                <Badge variant={remainingChars < 0 ? 'destructive' : 'secondary'}>
+                <Badge id="create-post-chars" variant={remainingChars < 0 ? 'destructive' : 'secondary'} aria-live="polite" aria-atomic="true">
                   {remainingChars} chars
                 </Badge>
               </div>
 
               {showEmojiPicker && (
-                <div className="absolute top-full left-0 z-50 mt-2">
+                <div id="emoji-picker" className="absolute top-full left-0 z-50 mt-2">
                   <EmojiPickerComponent onEmojiSelect={handleEmojiSelect} />
                 </div>
               )}
@@ -218,6 +234,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                     playsInline
                     muted
                     className="w-full h-48 sm:h-64 md:h-72 lg:h-80 object-cover rounded-lg bg-black"
+                    aria-label="Camera preview"
+                    role="img"
                     style={{ backgroundColor: '#000' }}
                   />
                   {!isCameraActive && (
@@ -243,6 +261,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                     onClick={handleCapturePhoto}
                     disabled={!isCameraActive}
                     className="flex-1 bg-primary hover:bg-primary/90"
+                    aria-label={isCameraActive ? 'Capture photo' : 'Camera starting'}
                   >
                     <Camera className="w-4 h-4 mr-2" />
                     {isCameraActive ? 'Capture Photo' : 'Starting...'}
@@ -263,16 +282,18 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                   <h3 className="font-medium">Upload Image</h3>
                   <p className="text-sm text-muted-foreground">Select an image from your device (max 2MB)</p>
                 </div>
-                <Button onClick={() => fileInputRef.current?.click()} className="bg-accent">
+                <label htmlFor="create-post-file" className="inline-flex items-center justify-center px-4 py-2 rounded bg-accent text-white cursor-pointer">
                   <Image className="w-4 h-4 mr-2" />
                   Choose Image
-                </Button>
+                </label>
                 <input
+                  id="create-post-file"
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleFileUpload}
-                  className="hidden"
+                  className="sr-only"
+                  aria-label="Upload image to attach to post"
                 />
               </div>
             </Card>
@@ -284,7 +305,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                 <div className="space-y-4">
                   <img
                     src={capturedImage}
-                    alt="Captured"
+                    alt="Captured preview of the image to attach to the post"
                     className="w-full h-64 object-cover rounded-lg"
                   />
                   <div className="flex gap-2">
@@ -294,12 +315,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                         setCapturedImage(null);
                         setActiveTab('camera');
                       }}
+                      aria-label="Retake photo"
                     >
                       Retake
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() => setCapturedImage(null)}
+                      aria-label="Remove photo"
                     >
                       Remove
                     </Button>
@@ -333,6 +356,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
               onClick={handleSubmit}
               disabled={(!content.trim() && !capturedImage) || remainingChars < 0 || isMinting}
               className="flex-1 bg-primary hover:bg-primary/90 animate-scale-in"
+              aria-label="Post and mint NFT"
             >
               <Send className="w-4 h-4 mr-2" />
               {isMinting ? 'Minting NFT...' : 'Post & Mint NFT'}
