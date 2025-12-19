@@ -1,4 +1,4 @@
-import { base, baseSepolia } from "wagmi/chains";
+import { base } from "wagmi/chains";
 import { Chain } from "wagmi/chains";
 
 export type ScaffoldConfig = {
@@ -13,7 +13,7 @@ export type ScaffoldConfig = {
 };
 
 const scaffoldConfig = {
-  targetNetworks: [baseSepolia],
+  targetNetworks: [base],
   // Only show the Burner Wallet when running on Base Sepolia
   onlyLocalBurnerWallet: false,
   rpcProviderUrl: {

@@ -1,16 +1,16 @@
 import { createPublicClient, http, getContract, parseAbiItem } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { base } from 'viem/chains';
 import { useWalletClient, WalletClient } from 'wagmi';
 import type { Post as AppPost } from '@/context/AppContext';
 import deployedContracts from '../../contracts/deployedContracts';
 import { toast } from 'sonner';
 
-// Get contract info from deployedContracts
-const CONTRACT_INFO = deployedContracts.baseSepolia.OnePostNFT;
+// Get contract info from deployedContracts (mainnet)
+const CONTRACT_INFO = deployedContracts.base.OnePostNFT;
 const CONTRACT_ADDRESS = CONTRACT_INFO.address;
 const CONTRACT_ABI = CONTRACT_INFO.abi;
 
-const MOCK_BASE_CONTRACT_INFO = deployedContracts.baseSepolia.MockBASE;
+const MOCK_BASE_CONTRACT_INFO = deployedContracts.base.MockBASE;
 const MOCK_BASE_CONTRACT_ADDRESS = MOCK_BASE_CONTRACT_INFO.address;
 const MOCK_BASE_CONTRACT_ABI = MOCK_BASE_CONTRACT_INFO.abi;
 
@@ -22,8 +22,8 @@ function resolveAddress(): `0x${string}` {
 }
 
 const publicClient = createPublicClient({
-  chain: baseSepolia,
-  transport: http('https://sepolia.base.org'),
+  chain: base,
+  transport: http((import.meta as any).env?.VITE_BASE_PROVIDER_URL || 'https://mainnet.base.org'),
 });
 
 // ERC20 approval function for MockBASE tokens

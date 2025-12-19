@@ -135,6 +135,17 @@ const deployedContracts = {
       "address"}]},{"type":"error","name":"ERC20InvalidSpender","inputs":[{"name":"spender","type":"address","internalType":"address"}]}],
     },
   },
+  base: {
+    OnePostNFT: {
+     address: "0xE54Bd15E6b5D41F6B726B90BA110B73A5CD0f22A",
+     abi: deployedContracts.baseSepolia.OnePostNFT.abi as Abi,
+    },
+    MockBASE: {
+     // For mainnet use the same MockBASE address as used on sepolia or replace with a proper mainnet token address
+     address: deployedContracts.baseSepolia.MockBASE.address,
+     abi: deployedContracts.baseSepolia.MockBASE.abi as Abi,
+    },
+  },
 } as const;
 
 export default deployedContracts;

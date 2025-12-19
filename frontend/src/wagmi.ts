@@ -1,5 +1,5 @@
 import { http, createConfig } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
+import { base } from "wagmi/chains";
 import { connectorsForWallets } from "@rainbow-me/rainbowkit";
 import {
   metaMaskWallet,
@@ -11,7 +11,7 @@ import {
 
 const projectId =
   import.meta.env.VITE_WC_PROJECT_ID ?? "f8fc66aef70efafe5c553752d3d4e236";
-const chains = [baseSepolia] as const;
+const chains = [base] as const;
 
 // RainbowKit v2 expects wallet builder functions (not invoked)
 // and global options passed to connectorsForWallets.
@@ -35,9 +35,7 @@ export const config = createConfig({
   chains,
   connectors,
   transports: {
-    [baseSepolia.id]: http(
-      "https://base-sepolia.g.alchemy.com/v2/SRtSnNb7fiMWCFojDi_2y63y3H5YNz1X"
-    ),
+    [base.id]: http((import.meta as any).env?.VITE_BASE_PROVIDER_URL || 'https://mainnet.base.org'),
   },
 });
 
