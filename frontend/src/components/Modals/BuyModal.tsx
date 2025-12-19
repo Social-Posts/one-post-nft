@@ -67,8 +67,8 @@ const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, post }) => {
 
       if (selectedPaymentMethod === 'mockbase') {
         // Get contract addresses from deployedContracts
-        const CONTRACT_ADDRESS = deployedContracts.baseSepolia.OnePostNFT.address as `0x${string}`;
-        const MOCK_BASE_CONTRACT_ADDRESS = deployedContracts.baseSepolia.MockBASE.address as `0x${string}`;
+        const CONTRACT_ADDRESS = deployedContracts.base.OnePostNFT.address as `0x${string}`;
+        const MOCK_BASE_CONTRACT_ADDRESS = deployedContracts.base.MockBASE.address as `0x${string}`;
 
         // First approve the NFT contract to spend MockBASE tokens
         toast.loading('🔓 Approving MockBASE tokens...', { duration: 0 });

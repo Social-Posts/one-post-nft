@@ -21,7 +21,7 @@ interface CommunityFeedProps {
   onCheckNewPosts?: () => void;
 }
 
-const MOCK_BASE_CONTRACT_ADDRESS = deployedContracts.baseSepolia.MockBASE.address as `0x${string}`;
+const MOCK_BASE_CONTRACT_ADDRESS = deployedContracts.base.MockBASE.address as `0x${string}`;
 
 const CommunityFeed: React.FC<CommunityFeedProps> = ({ isLoading, posts, onRefresh, onNavigate, hasNewPosts, onCheckNewPosts }) => {
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
