@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract OnePostNFT is ERC721 {
+contract OnePostNFT is IERC721, IERC721Metadata {
     using Strings for uint256;
     using SafeERC20 for IERC20;
 
@@ -94,7 +96,7 @@ contract OnePostNFT is ERC721 {
 
     uint256 constant PROPOSAL_EXPIRATION = 604800; // 7 days
 
-    constructor(address _baseTokenAddress) ERC721("NFT Social Posts", "NSP") {
+    constructor(address _baseTokenAddress) {
         baseTokenAddress = _baseTokenAddress;
     }
 
@@ -352,53 +354,53 @@ contract OnePostNFT is ERC721 {
     }
 
     // ERC721 Implementation
-    function name() public pure override returns (string memory) {
+    function name() public pure returns (string memory) {
         return "NFT Social Posts";
     }
 
-    function symbol() public pure override returns (string memory) {
+    function symbol() public pure returns (string memory) {
         return "NSP";
     }
 
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+    function tokenURI(uint256 tokenId) public view returns (string memory) {
         require(_exists(tokenId), "Token does not exist");
         return string(abi.encodePacked("ipfs://", posts[tokenId].contentHash));
     }
 
-    function ownerOf(uint256 tokenId) public view override returns (address) {
+    function ownerOf(uint256 tokenId) public view returns (address) {
         address owner = _owners[tokenId];
         require(owner != address(0), "Token does not exist");
         return owner;
     }
 
-    function balanceOf(address owner) public view override returns (uint256) {
+    function balanceOf(address owner) public view returns (uint256) {
         require(owner != address(0), "Invalid owner");
         return _balances[owner];
     }
 
-    function approve(address to, uint256 tokenId) public override {
+    function approve(address to, uint256 tokenId) public {
         address owner = ownerOf(tokenId);
         require(msg.sender == owner || isApprovedForAll(owner, msg.sender), "Not authorized");
         _tokenApprovals[tokenId] = to;
         emit Approval(owner, to, tokenId);
     }
 
-    function getApproved(uint256 tokenId) public view override returns (address) {
+    function getApproved(uint256 tokenId) public view returns (address) {
         require(_exists(tokenId), "Token does not exist");
         return _tokenApprovals[tokenId];
     }
 
-    function setApprovalForAll(address operator, bool approved) public override {
+    function setApprovalForAll(address operator, bool approved) public {
         require(msg.sender != operator, "Cannot approve self");
         _operatorApprovals[msg.sender][operator] = approved;
         emit ApprovalForAll(msg.sender, operator, approved);
     }
 
-    function isApprovedForAll(address owner, address operator) public view override returns (bool) {
+    function isApprovedForAll(address owner, address operator) public view returns (bool) {
         return _operatorApprovals[owner][operator];
     }
 
-    function transferFrom(address from, address to, uint256 tokenId) public override {
+    function transferFrom(address from, address to, uint256 tokenId) public {
         require(
             msg.sender == from ||
             msg.sender == getApproved(tokenId) ||
@@ -408,11 +410,11 @@ contract OnePostNFT is ERC721 {
         _transfer(from, to, tokenId);
     }
 
-    function _exists(uint256 tokenId) internal view override returns (bool) {
+    function _exists(uint256 tokenId) internal view returns (bool) {
         return _owners[tokenId] != address(0);
     }
 
-    function _mint(address to, uint256 tokenId) internal override {
+    function _mint(address to, uint256 tokenId) internal {
         require(to != address(0), "Cannot mint to zero address");
         require(!_exists(tokenId), "Token already exists");
 
@@ -422,7 +424,7 @@ contract OnePostNFT is ERC721 {
         emit Transfer(address(0), to, tokenId);
     }
 
-    function _transfer(address from, address to, uint256 tokenId) internal override {
+    function _transfer(address from, address to, uint256 tokenId) internal {
         require(to != address(0), "Cannot transfer to zero");
         require(ownerOf(tokenId) == from, "Transfer from incorrect owner");
 
@@ -440,5 +442,22 @@ contract OnePostNFT is ERC721 {
         _owners[tokenId] = to;
 
         emit Transfer(from, to, tokenId);
+    }
+
+    // Minimal safeTransferFrom implementations to satisfy IERC721
+    function safeTransferFrom(address from, address to, uint256 tokenId) external {
+        transferFrom(from, to, tokenId);
+    }
+
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata /*data*/) external {
+        transferFrom(from, to, tokenId);
+    }
+
+    // IERC165 support
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+        return
+            interfaceId == type(IERC165).interfaceId ||
+            interfaceId == type(IERC721).interfaceId ||
+            interfaceId == type(IERC721Metadata).interfaceId;
     }
 }
