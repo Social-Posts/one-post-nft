@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 // Get contract info from deployedContracts (mainnet)
 const CONTRACT_INFO = deployedContracts.base.OnePostNFT;
+
 const CONTRACT_ADDRESS = CONTRACT_INFO.address;
 const CONTRACT_ABI = CONTRACT_INFO.abi;
 
@@ -40,7 +41,7 @@ export async function approveERC20(walletClient: WalletClient, spender: `0x${str
 }
 
 // Utilities
-const toAppPost = async (p: any): Promise<AppPost> => {
+const toAppPost = async (p: ContractPost): Promise<AppPost> => {
   const contentHash = p.contentHash; // Assuming contentHash is already a string
 
   // Fetch content from IPFS using multiple gateways for better reliability
@@ -108,12 +109,12 @@ const toAppPost = async (p: any): Promise<AppPost> => {
 
 // READ FUNCTIONS
 export async function getAllPosts(offset: number, limit: number): Promise<AppPost[]> {
-  const posts: any[] = await publicClient.readContract({
+  const posts: ContractPost[] = (await publicClient.readContract({
     address: resolveAddress(),
     abi: CONTRACT_ABI,
     functionName: 'getAllPosts',
     args: [BigInt(offset), BigInt(limit)],
-  });
+  })) as ContractPost[];
   const mappedPosts = await Promise.all(posts.map(toAppPost));
   return mappedPosts;
 }
@@ -124,22 +125,22 @@ export async function canUserPostToday(user: `0x${string}`): Promise<boolean> {
 }
 
 export async function getUserPosts(user: `0x${string}`): Promise<AppPost[]> {
-  const posts: any[] = await publicClient.readContract({
+  const posts: ContractPost[] = (await publicClient.readContract({
     address: resolveAddress(),
     abi: CONTRACT_ABI,
     functionName: 'getUserPosts',
     args: [user],
-  });
+  })) as ContractPost[];
   return Promise.all(posts.map(toAppPost));
 }
 
-export async function getSellProposals(user: `0x${string}`): Promise<any[]> {
-  const proposals: any[] = await publicClient.readContract({
+export async function getSellProposals(user: `0x${string}`): Promise<MarketplaceProposal[]> {
+  const proposals: MarketplaceProposal[] = (await publicClient.readContract({
     address: resolveAddress(),
     abi: CONTRACT_ABI,
     functionName: 'getSellProposals',
     args: [user],
-  });
+  })) as MarketplaceProposal[];
   return proposals;
 }
 
@@ -174,12 +175,12 @@ export async function getPostPrice(tokenId: string | number | bigint): Promise<n
 }
 
 export async function getAllPostsForSale(offset: number, limit: number): Promise<AppPost[]> {
-  const posts: any[] = await publicClient.readContract({
+  const posts: ContractPost[] = (await publicClient.readContract({
     address: resolveAddress(),
     abi: CONTRACT_ABI,
     functionName: 'getAllPostsForSale',
     args: [BigInt(offset), BigInt(limit)],
-  });
+  })) as ContractPost[];
   return Promise.all(posts.map(toAppPost));
 }
 

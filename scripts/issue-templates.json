@@ -1,0 +1,208 @@
+{
+  "frontend": [
+    {
+      "title": "Set contract address in frontend constants",
+      "body": "The frontend currently has a TODO to set the deployed contract address. Update `frontend/src/utils/constants.ts` to read the contract address from the environment and document the env var in the README.\n\nAcceptance criteria:\n- Contract address is read from env (e.g., VITE_CONTRACT_ADDRESS)\n- Update `frontend/README.md` or project README with setup instructions",
+      "labels": ["frontend", "good first issue", "documentation"]
+    },
+    {
+      "title": "Add environment configuration instructions for Supabase",
+      "body": "Supabase credential placeholders exist in `frontend/src/services/supabase.ts`. Add clear instructions to the frontend README on how to create a `.env` or `.env.local` file and required variables (SUPABASE_URL, SUPABASE_ANON_KEY).",
+      "labels": ["frontend", "documentation"]
+    },
+    {
+      "title": "Implement online status in chat service",
+      "body": "`frontend/src/services/chatService.ts` has a TODO comment for online status. Implement presence/online status using Supabase presence or socket, and add tests or mock to demonstrate behavior.",
+      "labels": ["frontend", "enhancement"]
+    },
+    {
+      "title": "Add unit tests for `usePostNFT` hook",
+      "body": "Add Jest/React Testing Library unit tests for `frontend/src/hooks/usePostNFT.ts`. Cover creating a post, fetching posts and error handling.",
+      "labels": ["frontend", "tests", "good first issue"]
+    },
+    {
+      "title": "Add E2E test for creating a post",
+      "body": "Add a Playwright or Cypress E2E test that verifies the full create post flow (sign in, upload to IPFS mock, create post).",
+      "labels": ["frontend", "tests", "e2e"]
+    },
+    {
+      "title": "Improve accessibility on post creation modal",
+      "body": "Audit `CreatePostModal` and ensure form inputs have labels, aria attributes, focus management and keyboard navigation.",
+      "labels": ["frontend", "accessibility", "enhancement"]
+    },
+    {
+      "title": "Add component docs or Storybook for `PostCard`",
+      "body": "Add Storybook stories or component docs for `frontend/src/components/Feed/PostCard.tsx` so contributors can preview and iterate on UI components.",
+      "labels": ["frontend", "docs"]
+    },
+    {
+      "title": "Add input validations on create post form",
+      "body": "Ensure the Create Post form validates content length and displays helpful error messages; add tests for validation behavior.",
+      "labels": ["frontend", "bug", "tests"]
+    },
+    {
+      "title": "Lazy-load images and optimize asset loading",
+      "body": "Optimize image assets used in feeds by lazy-loading and adding smaller thumbnails to improve performance on mobile devices.",
+      "labels": ["frontend", "performance"]
+    },
+    {
+      "title": "Add CI to run frontend tests and lint",
+      "body": "Add GitHub Actions to run `yarn install`, `yarn lint` and `yarn test` for the frontend on PRs.",
+      "labels": ["frontend", "ci"]
+    },
+    {
+      "title": "Document local dev startup steps for frontend",
+      "body": "Extend README to include step-by-step front-end dev environment setup (install, env vars, run, build) and how to link to local contract addresses for dev workflows.",
+      "labels": ["frontend", "documentation"]
+    },
+    {
+      "title": "Add consistent error toast messages across UI",
+      "body": "Ensure errors from contract interactions and IPFS uploads show consistent toast messages using existing `use-toast` hook.",
+      "labels": ["frontend", "bugfix"]
+    },
+    {
+      "title": "Add TypeScript types and improve typing in services",
+      "body": "There are a few any/implicit types in service files like `ipfs.ts` and `contract.ts`—improve typing and add unit tests to guard behavior.",
+      "labels": ["frontend", "refactor"]
+    },
+    {
+      "title": "Add contributing guide section for frontend",
+      "body": "Add a frontend-specific CONTRIBUTING.md or a section in main README documenting how to run dev environment, run tests, and how to make a PR that touches the frontend.",
+      "labels": ["frontend", "documentation", "good first issue"]
+    },
+    {
+      "title": "Make contract ABI loading configurable",
+      "body": "Enable the frontend to load the contract ABI from a configurable path or fetch from a central location so ABI changes are easy to propagate.",
+      "labels": ["frontend", "enhancement"]
+    },
+    {
+      "title": "Add network switch UX when user is on wrong chain",
+      "body": "Improve wallet connect behavior and prompt the user with a clear message and button to switch to Base Sepolia/Mainnet as appropriate.",
+      "labels": ["frontend", "ux"]
+    },
+    {
+      "title": "Add linting and formatting pre-commit hook",
+      "body": "Add Husky/pre-commit hook to run `yarn lint` and `yarn format` to improve PR quality and consistency.",
+      "labels": ["frontend", "chore"]
+    },
+    {
+      "title": "Add a local mock backend for dev",
+      "body": "Provide a small mock server or fixtures to allow contributors to run the app locally without requiring deployed contracts or live Supabase for faster onboarding.",
+      "labels": ["frontend", "enhancement", "good first issue"]
+    },
+    {
+      "title": "Audit and fix console warnings and unused imports",
+      "body": "Run the app and fix console warnings and remove unused imports; add a lint rule to treat warnings as errors in CI.",
+      "labels": ["frontend", "chore"]
+    }
+    ,
+    {
+      "title": "Add rate-limiting and spam-prevention for posts",
+      "body": "Add server-side or client-side mechanisms to prevent spam posts and abusive usage patterns; document considerations for threshold and testing.",
+      "labels": ["frontend", "security", "enhancement"]
+    }
+  ],
+  "smartcontract": [
+    {
+      "title": "Add NatSpec comments to public contract functions",
+      "body": "Improve contract documentation by adding NatSpec comments to `OnePostNFT.sol` functions and events so developers and users can understand their behavior.",
+      "labels": ["smart-contract", "documentation"]
+    },
+    {
+      "title": "Add unit tests for marketplace edge cases",
+      "body": "Add tests covering expiration logic, propose/cancel/buy race conditions, and invalid price handling in `test/OnePostNFT.t.sol`.",
+      "labels": ["smart-contract", "tests"]
+    },
+    {
+      "title": "Add fuzz tests for token transfers and royalties",
+      "body": "Use Foundry `forge` fuzz tests to validate royalties distribution across many inputs and ensure no unexpected behavior with large values.",
+      "labels": ["smart-contract", "tests", "security"]
+    },
+    {
+      "title": "Create a GitHub Action to run Foundry tests on PRs",
+      "body": "Add CI workflow that installs Foundry and runs `forge test` on PRs to prevent regressions.",
+      "labels": ["smart-contract", "ci"]
+    },
+    {
+      "title": "Add Slither or MythX static analysis job",
+      "body": "Add a security static analysis step using Slither or a similar tool to detect common solidity issues and report results in CI.",
+      "labels": ["smart-contract", "security"]
+    },
+    {
+      "title": "Improve require messages and custom errors",
+      "body": "Replace generic `require` messages or add custom errors in `OnePostNFT.sol` to make failure modes clearer and cheaper gas-wise.",
+      "labels": ["smart-contract", "refactor"]
+    },
+    {
+      "title": "Add gas usage tests and snapshot comparisons",
+      "body": "Add scripts to measure gas usage for key functions (createPost, buyPost) and store gas snapshots to track regression.",
+      "labels": ["smart-contract", "performance"]
+    },
+    {
+      "title": "Add contract verification workflow",
+      "body": "Add a workflow or script to verify contracts automatically on Base explorers after deployment (use `forge verify-contract` or similar).",
+      "labels": ["smart-contract", "ci"]
+    },
+    {
+      "title": "Add tests to validate royalty distribution exactly 5%",
+      "body": "Write tests that assert the 5% royalty is applied on secondary sales and rounding/edge cases are handled correctly.",
+      "labels": ["smart-contract", "tests"]
+    },
+    {
+      "title": "Document contract upgradeability considerations",
+      "body": "Create a doc that explains whether the contracts are intended to be upgradeable and steps to migrate if needed.",
+      "labels": ["smart-contract", "documentation"]
+    },
+    {
+      "title": "Add more comprehensive MockBASE token tests",
+      "body": "Extend tests around `MockBASE.sol` minting, allowances, and transfer behavior, including edge cases.",
+      "labels": ["smart-contract", "tests"]
+    },
+    {
+      "title": "Add a gas-optimized alternative implementation for heavy ops",
+      "body": "Identify heavy operations and propose a gas-optimized alternative; add tests and benchmarks to compare.",
+      "labels": ["smart-contract", "performance"]
+    },
+    {
+      "title": "Add security-focused test scenarios (reentrancy, replays)",
+      "body": "Add tests and scripts that attempt common attacks (reentrancy, replay) to validate protections like ReentrancyGuard are effective.",
+      "labels": ["smart-contract", "security"]
+    },
+    {
+      "title": "Add contribution guide for smartcontract devs",
+      "body": "Add a CONTRIBUTING section for `packages/smartcontract` that explains how to run tests, formatting, and open a PR with foundry artifacts.",
+      "labels": ["smart-contract", "documentation", "good first issue"]
+    },
+    {
+      "title": "Add a test to check for correct access control",
+      "body": "Ensure admin-only functions are protected and write tests that assert only owner can perform privileged operations.",
+      "labels": ["smart-contract", "tests"]
+    },
+    {
+      "title": "Add a script to deploy to Sepolia/Base testnet with verification",
+      "body": "Provide a documented script or `forge` command snippets that deploy and verify contracts to Base Sepolia as part of release steps.",
+      "labels": ["smart-contract", "automation"]
+    },
+    {
+      "title": "Add test to validate marketplace expiration behavior",
+      "body": "Test the expiration behavior for sales proposals (7-day expiry) and ensure the contract handles expiry correctly even with multiple proposals.",
+      "labels": ["smart-contract", "tests"]
+    },
+    {
+      "title": "Add instructions for running a local Anvil node for testing",
+      "body": "Add step-by-step instructions in the smartcontract README about running `anvil` and connecting the frontend locally for integration testing.",
+      "labels": ["smart-contract", "documentation"]
+    }
+    ,
+    {
+      "title": "Add a gas-report workflow and CI artifact",
+      "body": "Add a workflow that runs gas reports (e.g. via forge or third-party) and stores gas snapshots as CI artifacts to track regressions.",
+      "labels": ["smart-contract", "ci", "performance"]
+    },
+    {
+      "title": "Create a formal verification checklist",
+      "body": "Draft a formal verification and audit checklist for key contract functions and document the steps needed before mainnet deployments.",
+      "labels": ["smart-contract", "security", "documentation"]
+    }
+  ]
+}
