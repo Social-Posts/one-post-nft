@@ -31,7 +31,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isConnected: _isConnected, on
   const [soldNFTs, setSoldNFTs] = useState<string[]>([]);
   const [isLoadingSoldNFTs, setIsLoadingSoldNFTs] = useState(false);
 
-  const fetchAllUserNFTs = async () => {
+  const fetchAllUserNFTs = useCallback(async () => {
     if (!address) return;
 
     setIsLoadingNFTs(true);
@@ -48,9 +48,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isConnected: _isConnected, on
     } finally {
       setIsLoadingNFTs(false);
     }
-  };
+  }, [address]);
 
-  const fetchSoldNFTs = async () => {
+  const fetchSoldNFTs = useCallback(async () => {
     if (!address) return;
 
     setIsLoadingSoldNFTs(true);
@@ -68,7 +68,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isConnected: _isConnected, on
     } finally {
       setIsLoadingSoldNFTs(false);
     }
-  };
+  }, [address]);
 
   // Load initial like data
   useEffect(() => {
@@ -110,7 +110,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isConnected: _isConnected, on
       fetchAllUserNFTs();
       fetchSoldNFTs();
     }
-  }, [isConnected, address]);
+  }, [isConnected, address, fetchAllUserNFTs, fetchSoldNFTs]);
 
   const handleLike = async (post: Post) => {
     if (!address) {

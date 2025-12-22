@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -23,7 +23,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onNavigate 
   const [loading, setLoading] = useState(false);
 
   // Load notifications
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     if (!address) return;
 
     try {
@@ -39,12 +39,12 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onNavigate 
     } finally {
       setLoading(false);
     }
-  };
+  }, [address]);
 
   // Load notifications on mount and address change
   useEffect(() => {
     loadNotifications();
-  }, [address]);
+  }, [loadNotifications]);
 
   // Subscribe to real-time notifications
   useEffect(() => {
@@ -55,7 +55,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onNavigate 
       (newNotification) => {
         setNotifications(prev => [newNotification, ...prev]);
         setUnreadCount(prev => prev + 1);
-        
+
         // Show toast for new notification
         toast.success(newNotification.title);
       }
