@@ -27,7 +27,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 contract OnePostNFTV2 is ERC721, Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
-    // Custom errors (gas efficient)
     error NotTokenOwner();
     error InvalidPrice();
     error NotForSale();
@@ -40,7 +39,6 @@ contract OnePostNFTV2 is ERC721, Ownable, ReentrancyGuard, Pausable {
     error ArrayLengthMismatch();
     error MaxRoyaltyExceeded();
 
-    // Packed struct for gas efficiency
     struct Post {
         address author;           // 20 bytes
         address currentOwner;     // 20 bytes
