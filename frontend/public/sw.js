@@ -124,7 +124,7 @@ self.addEventListener('fetch', (event) => {
             const responseClone = response.clone();
             caches.open(DYNAMIC_CACHE)
               .then((cache) => cache.put(request, responseClone))
-              .catch((error) => console.log('Cache put error:', error));
+              .catch((error) => console.error('Cache put error:', error));
           }
           return response;
         })

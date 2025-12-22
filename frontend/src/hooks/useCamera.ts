@@ -31,14 +31,14 @@ export const useCamera = () => {
 
     try {
       setError(undefined);
-      console.log('Requesting camera permissions...');
+      if (import.meta.env.DEV) console.debug('Requesting camera permissions...');
 
       // Check if camera permission is granted
       try {
         const permission = await navigator.permissions.query({ name: 'camera' as PermissionName });
-        console.log('Camera permission status:', permission.state);
+        if (import.meta.env.DEV) console.debug('Camera permission status:', permission.state);
       } catch (permErr) {
-        console.log('Permission API not available, proceeding with getUserMedia');
+        if (import.meta.env.DEV) console.debug('Permission API not available, proceeding with getUserMedia');
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -50,7 +50,7 @@ export const useCamera = () => {
         audio: false,
       });
 
-      console.log('Camera stream obtained:', stream.getVideoTracks().length, 'video tracks');
+      if (import.meta.env.DEV) console.debug('Camera stream obtained:', stream.getVideoTracks().length, 'video tracks');
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -62,11 +62,11 @@ export const useCamera = () => {
 
         // Wait for video to be ready and play
         videoRef.current.onloadedmetadata = async () => {
-          try {
+              try {
             if (videoRef.current) {
-              console.log('Video metadata loaded, attempting to play...');
+              if (import.meta.env.DEV) console.debug('Video metadata loaded, attempting to play...');
               await videoRef.current.play();
-              console.log('Camera started successfully');
+              if (import.meta.env.DEV) console.debug('Camera started successfully');
               toast.success('Camera started!');
             }
           } catch (err) {
@@ -78,9 +78,9 @@ export const useCamera = () => {
         // Also try to play immediately in case metadata is already loaded
         try {
           await videoRef.current.play();
-          console.log('Video playing immediately');
+          if (import.meta.env.DEV) console.debug('Video playing immediately');
         } catch (err) {
-          console.log('Immediate play failed, waiting for metadata...');
+          if (import.meta.env.DEV) console.debug('Immediate play failed, waiting for metadata...');
         }
       }
 
