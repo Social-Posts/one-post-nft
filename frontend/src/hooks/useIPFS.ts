@@ -28,9 +28,9 @@ export const useIPFS = () => {
 
   // Upload content to IPFS
   const uploadToIPFS = useCallback(async (
-    content: string, 
+    content: string,
     author: string,
-    additionalData?: Record<string, any>
+    additionalData?: Record<string, unknown>
   ): Promise<string | null> => {
     try {
       setUploading(true);
@@ -47,8 +47,8 @@ export const useIPFS = () => {
       const hash = await storeOnIPFS(metadata);
       toast.success('Content uploaded to IPFS successfully!');
       return hash;
-    } catch (err: any) {
-      const errorMessage = err?.message || 'Failed to upload to IPFS';
+    } catch (err: unknown) {
+      const errorMessage = (err as { message?: string })?.message || 'Failed to upload to IPFS';
       setError(errorMessage);
       toast.error(errorMessage);
       return null;
@@ -96,11 +96,11 @@ export const useIPFS = () => {
 
       // Note: For production, you'd want to use a proper image storage service
       // This is a simplified approach for the hackathon
-      const hash = await storeOnIPFS(metadata as any);
+      const hash = await storeOnIPFS(metadata as Record<string, unknown>);
       toast.success('Image uploaded successfully!');
       return hash;
-    } catch (err: any) {
-      const errorMessage = err?.message || 'Failed to upload image';
+    } catch (err: unknown) {
+      const errorMessage = (err as { message?: string })?.message || 'Failed to upload image';
       setError(errorMessage);
       toast.error(errorMessage);
       return null;
@@ -123,8 +123,8 @@ export const useIPFS = () => {
       }
 
       return data;
-    } catch (err: any) {
-      const errorMessage = err?.message || 'Failed to download from IPFS';
+    } catch (err: unknown) {
+      const errorMessage = (err as { message?: string })?.message || 'Failed to download from IPFS';
       setError(errorMessage);
       console.error('IPFS download error:', errorMessage);
       return null;

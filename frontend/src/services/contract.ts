@@ -16,7 +16,7 @@ const MOCK_BASE_CONTRACT_ADDRESS = MOCK_BASE_CONTRACT_INFO.address;
 const MOCK_BASE_CONTRACT_ABI = MOCK_BASE_CONTRACT_INFO.abi;
 
 function resolveAddress(): `0x${string}` {
-  const envAddr = (import.meta as any).env?.VITE_CONTRACT_ADDRESS as string | undefined;
+  const envAddr = import.meta.env.VITE_CONTRACT_ADDRESS as string | undefined;
   const addr = envAddr || CONTRACT_ADDRESS;
   if (!addr) throw new Error('Contract address not configured. Set VITE_CONTRACT_ADDRESS or use deployedContracts.ts');
   return addr as `0x${string}`;
@@ -24,8 +24,34 @@ function resolveAddress(): `0x${string}` {
 
 const publicClient = createPublicClient({
   chain: base,
-  transport: http((import.meta as any).env?.VITE_BASE_PROVIDER_URL || 'https://mainnet.base.org'),
+  transport: http(import.meta.env.VITE_BASE_PROVIDER_URL || 'https://mainnet.base.org'),
 });
+
+// Internal types returned from contract reads
+type RawPost = {
+  tokenId: bigint | number | string;
+  author: `0x${string}`;
+  currentOwner: `0x${string}`;
+  contentHash?: string;
+  timestamp: bigint | number | string;
+  isForSale?: boolean;
+  price?: bigint | number | string;
+};
+
+type SellProposal = {
+  id: bigint | number | string;
+  tokenId: bigint | number | string;
+  seller: `0x${string}`;
+  isActive: boolean;
+  price: bigint | number | string;
+};
+
+type SoldNFTStored = {
+  tokenId: string;
+  buyer: string;
+  timestamp: number;
+  transactionHash: string;
+};
 
 // ERC20 approval function for MockBASE tokens
 export async function approveERC20(walletClient: WalletClient, spender: `0x${string}`, amount: bigint): Promise<`0x${string}`> {
@@ -41,7 +67,7 @@ export async function approveERC20(walletClient: WalletClient, spender: `0x${str
 }
 
 // Utilities
-const toAppPost = async (p: ContractPost): Promise<AppPost> => {
+const toAppPost = async (p: RawPost): Promise<AppPost> => {
   const contentHash = p.contentHash; // Assuming contentHash is already a string
 
   // Fetch content from IPFS using multiple gateways for better reliability
@@ -109,7 +135,7 @@ const toAppPost = async (p: ContractPost): Promise<AppPost> => {
 
 // READ FUNCTIONS
 export async function getAllPosts(offset: number, limit: number): Promise<AppPost[]> {
-  const posts: ContractPost[] = (await publicClient.readContract({
+  const posts: RawPost[] = await publicClient.readContract({
     address: resolveAddress(),
     abi: CONTRACT_ABI,
     functionName: 'getAllPosts',
@@ -125,7 +151,7 @@ export async function canUserPostToday(user: `0x${string}`): Promise<boolean> {
 }
 
 export async function getUserPosts(user: `0x${string}`): Promise<AppPost[]> {
-  const posts: ContractPost[] = (await publicClient.readContract({
+  const posts: RawPost[] = await publicClient.readContract({
     address: resolveAddress(),
     abi: CONTRACT_ABI,
     functionName: 'getUserPosts',
@@ -134,8 +160,8 @@ export async function getUserPosts(user: `0x${string}`): Promise<AppPost[]> {
   return Promise.all(posts.map(toAppPost));
 }
 
-export async function getSellProposals(user: `0x${string}`): Promise<MarketplaceProposal[]> {
-  const proposals: MarketplaceProposal[] = (await publicClient.readContract({
+export async function getSellProposals(user: `0x${string}`): Promise<SellProposal[]> {
+  const proposals: SellProposal[] = await publicClient.readContract({
     address: resolveAddress(),
     abi: CONTRACT_ABI,
     functionName: 'getSellProposals',
@@ -175,7 +201,7 @@ export async function getPostPrice(tokenId: string | number | bigint): Promise<n
 }
 
 export async function getAllPostsForSale(offset: number, limit: number): Promise<AppPost[]> {
-  const posts: ContractPost[] = (await publicClient.readContract({
+  const posts: RawPost[] = await publicClient.readContract({
     address: resolveAddress(),
     abi: CONTRACT_ABI,
     functionName: 'getAllPostsForSale',
@@ -215,7 +241,7 @@ export async function proposeSell(walletClient: WalletClient, tokenId: string | 
 
 export async function cancelSell(walletClient: WalletClient, tokenId: string | number | bigint): Promise<`0x${string}`> {
   // First, get the proposal ID for this token
-  const proposals: any[] = await publicClient.readContract({
+  const proposals: SellProposal[] = await publicClient.readContract({
     address: resolveAddress(),
     abi: CONTRACT_ABI,
     functionName: 'getSellProposals',
@@ -305,7 +331,7 @@ export async function mintMockTokens(walletClient: WalletClient, amount: number)
 // Keeping it for now, but it might be removed later.
 async function getProposalIdByTokenId(walletClient: WalletClient, tokenId: string | number | bigint): Promise<string | null> {
   try {
-    const proposals: any[] = await publicClient.readContract({
+    const proposals: SellProposal[] = await publicClient.readContract({
       address: resolveAddress(),
       abi: CONTRACT_ABI,
       functionName: 'getSellProposals',
@@ -324,12 +350,20 @@ async function getProposalIdByTokenId(walletClient: WalletClient, tokenId: strin
 }
 
 // Get sold NFTs from localStorage (temporary solution until we can query events)
-export async function getSoldNFTs(): Promise<any[]> {
-  try {
-    const soldNFTs = JSON.parse(localStorage.getItem('soldNFTs') || '[]');
+type SoldPost = AppPost & {
+  soldAt: number;
+  buyer: string;
+  transactionHash: string;
+  isSold: true;
+  salePrice: number;
+};
 
-    // Get full post data for each sold NFT
-    const soldPostsPromises = soldNFTs.map(async (soldNFT: any) => {
+export async function getSoldNFTs(): Promise<Array<SoldPost | null>> {
+  try {
+    const soldNFTs: SoldNFTStored[] = JSON.parse(localStorage.getItem('soldNFTs') || '[]');
+
+      // Get full post data for each sold NFT
+      const soldPostsPromises = soldNFTs.map(async (soldNFT: SoldNFTStored) => {
       try {
         const post = await getPostByTokenId(soldNFT.tokenId);
         return {
@@ -347,7 +381,7 @@ export async function getSoldNFTs(): Promise<any[]> {
     });
 
     const soldPosts = await Promise.all(soldPostsPromises);
-    return soldPosts.filter(post => post !== null);
+    return soldPosts.filter((post): post is SoldPost => post !== null);
   } catch (error) {
     return [];
   }
@@ -356,7 +390,7 @@ export async function getSoldNFTs(): Promise<any[]> {
 // Get user's sold NFTs from contract mapping
 export async function getUserSoldNFTs(userAddress: `0x${string}`): Promise<string[]> {
   try {
-    const soldTokenIds: any[] = await publicClient.readContract({
+    const soldTokenIds: (bigint | number | string)[] = await publicClient.readContract({
       address: resolveAddress(),
       abi: CONTRACT_ABI,
       functionName: 'getUserSoldNfts',
@@ -369,7 +403,7 @@ export async function getUserSoldNFTs(userAddress: `0x${string}`): Promise<strin
 }
 
 // Get all NFTs that have changed ownership (sold NFTs) - for global sold history
-export async function getAllSoldNFTs(): Promise<any[]> {
+export async function getAllSoldNFTs(): Promise<SoldPost[]> {
   try {
     // Get all posts and check which ones have different author vs currentOwner
     // AND are not currently for sale (truly sold, not just listed)
@@ -394,7 +428,7 @@ export async function getAllSoldNFTs(): Promise<any[]> {
       originalAuthor: post.author,
       isCurrentlyForSale: post.isForSale || false,
       currentPrice: post.price || 0
-    }));
+    })) as SoldPost[];
   } catch (error) {
     return [];
   }

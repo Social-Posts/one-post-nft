@@ -34,6 +34,8 @@ vi.mock("@/services/notificationService", () => ({
   },
 }));
 
+
+import type { WalletClient } from 'wagmi';
 import { usePostNFT } from "../usePostNFT";
 
 function TestComponent() {
@@ -71,7 +73,7 @@ describe("usePostNFT", () => {
   it("mints post successfully when wallet connected and calls NotificationService", async () => {
     // Arrange: mock connected wallet and walletClient
     useAccountMock.mockImplementation(() => ({ address: '0x1111111111111111111111111111111111111111' }));
-    const fakeWalletClient = { sign: vi.fn() } as any;
+    const fakeWalletClient = { sign: vi.fn() } as unknown as WalletClient;
     useWalletClientMock.mockImplementation(() => ({ data: fakeWalletClient }));
 
     render(<TestComponent />);

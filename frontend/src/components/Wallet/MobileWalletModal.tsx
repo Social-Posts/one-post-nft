@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Wallet, ExternalLink, Smartphone, Download, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAccount, useConnect } from 'wagmi';
+import type { Connector } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 interface MobileWalletModalProps {
@@ -63,7 +64,7 @@ const MobileWalletModal: React.FC<MobileWalletModalProps> = ({
     return connectorId;
   };
 
-  const handleConnect = (connector: any) => {
+  const handleConnect = (connector: Connector) => {
     connect({ connector });
   };
 

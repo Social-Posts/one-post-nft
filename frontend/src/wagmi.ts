@@ -9,8 +9,18 @@ import {
   braveWallet,
 } from "@rainbow-me/rainbowkit/wallets";
 
-const projectId =
-  import.meta.env.VITE_WC_PROJECT_ID ?? "f8fc66aef70efafe5c553752d3d4e236";
+// Extend Vite's ImportMetaEnv to include our expected variables and avoid `any` casts
+declare global {
+  interface ImportMetaEnv {
+    VITE_WC_PROJECT_ID?: string;
+    VITE_BASE_PROVIDER_URL?: string;
+  }
+  interface ImportMeta {
+    readonly env: ImportMetaEnv;
+  }
+}
+
+const projectId = import.meta.env.VITE_WC_PROJECT_ID ?? "f8fc66aef70efafe5c553752d3d4e236";
 const chains = [base] as const;
 
 // RainbowKit v2 expects wallet builder functions (not invoked)
@@ -35,7 +45,7 @@ export const config = createConfig({
   chains,
   connectors,
   transports: {
-    [base.id]: http((import.meta as any).env?.VITE_BASE_PROVIDER_URL || 'https://mainnet.base.org'),
+    [base.id]: http(import.meta.env.VITE_BASE_PROVIDER_URL || 'https://mainnet.base.org'),
   },
 });
 

@@ -86,7 +86,8 @@ export const useNotificationCounts = () => {
       }
     };
 
-    let chatSubscriptions: any[] = [];
+    type SubscriptionLike = { unsubscribe: () => void };
+    let chatSubscriptions: SubscriptionLike[] = [];
     setupChatSubscriptions().then(subs => {
       chatSubscriptions = subs;
     });

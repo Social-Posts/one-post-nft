@@ -312,12 +312,12 @@ export const usePostNFT = () => {
   );
 
   const fetchSwapProposals = useCallback(
-    async (userAddress?: string): Promise<any[]> => {
+    async (userAddress?: string): Promise<Array<{ id: string; tokenId: string; seller: `0x${string}`; isActive: boolean; price: number | string }>> => {
       const addressToCheck = userAddress || address;
       if (!addressToCheck) return [];
 
       try {
-        return await getSellProposals(addressToCheck as `0x${string}`);
+        return await getSellProposals(addressToCheck as `0x${string}`) as Array<{ id: string; tokenId: string; seller: `0x${string}`; isActive: boolean; price: number | string }>;
       } catch (err: unknown) {
         const errorMessage =
           (err as Error)?.message || "Failed to fetch sell proposals";

@@ -55,7 +55,7 @@ const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
       icon: '🦊',
       description: 'The most popular Ethereum wallet',
       downloadUrl: 'https://metamask.io/',
-      isInstalled: typeof window !== 'undefined' && !!(window as any).ethereum?.isMetaMask,
+      isInstalled: typeof window !== 'undefined' && !!(window as unknown as { ethereum?: { isMetaMask?: boolean } }).ethereum?.isMetaMask,
     },
     {
       id: 'coinbase',
@@ -63,7 +63,7 @@ const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
       icon: '🪙',
       description: 'Wallet by Coinbase with built-in exchange',
       downloadUrl: 'https://www.coinbase.com/wallet',
-      isInstalled: typeof window !== 'undefined' && !!(window as any).ethereum?.isCoinbaseWallet,
+      isInstalled: typeof window !== 'undefined' && !!(window as unknown as { ethereum?: { isCoinbaseWallet?: boolean } }).ethereum?.isCoinbaseWallet,
     },
     {
       id: 'walletconnect',
@@ -92,13 +92,14 @@ const WalletSelectionModal: React.FC<WalletSelectionModalProps> = ({
       }
 
       await connect({ connector });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Wallet connection error:', error);
+      const msg = (error as { message?: string })?.message || '';
 
-      if (error.message?.includes('User rejected') || error.message?.includes('rejected')) {
+      if (msg.includes('User rejected') || msg.includes('rejected')) {
         toast.error('Connection cancelled by user');
       } else {
-        toast.error(`Failed to connect: ${error.message || 'Please try again'}`);
+        toast.error(`Failed to connect: ${msg || 'Please try again'}`);
       }
       setConnectingWalletId(null);
     }

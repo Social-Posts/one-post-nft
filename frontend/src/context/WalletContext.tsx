@@ -1,8 +1,6 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 
-interface WalletContextType {
-  // No longer managing Xverse directly here
-}
+type WalletContextType = object;
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
@@ -19,9 +17,7 @@ interface WalletProviderProps {
 }
 
 export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
-  const value: WalletContextType = {
-    // No longer managing Xverse directly here
-  };
+  const value: WalletContextType = {};
 
   return (
     <WalletContext.Provider value={value}>
