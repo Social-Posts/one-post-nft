@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 // Get contract info from deployedContracts (mainnet)
 const CONTRACT_INFO = deployedContracts.base.OnePostNFT;
+
 const CONTRACT_ADDRESS = CONTRACT_INFO.address;
 const CONTRACT_ABI = CONTRACT_INFO.abi;
 
@@ -139,7 +140,7 @@ export async function getAllPosts(offset: number, limit: number): Promise<AppPos
     abi: CONTRACT_ABI,
     functionName: 'getAllPosts',
     args: [BigInt(offset), BigInt(limit)],
-  });
+  })) as ContractPost[];
   const mappedPosts = await Promise.all(posts.map(toAppPost));
   return mappedPosts;
 }
@@ -155,7 +156,7 @@ export async function getUserPosts(user: `0x${string}`): Promise<AppPost[]> {
     abi: CONTRACT_ABI,
     functionName: 'getUserPosts',
     args: [user],
-  });
+  })) as ContractPost[];
   return Promise.all(posts.map(toAppPost));
 }
 
@@ -165,7 +166,7 @@ export async function getSellProposals(user: `0x${string}`): Promise<SellProposa
     abi: CONTRACT_ABI,
     functionName: 'getSellProposals',
     args: [user],
-  });
+  })) as MarketplaceProposal[];
   return proposals;
 }
 
@@ -205,7 +206,7 @@ export async function getAllPostsForSale(offset: number, limit: number): Promise
     abi: CONTRACT_ABI,
     functionName: 'getAllPostsForSale',
     args: [BigInt(offset), BigInt(limit)],
-  });
+  })) as ContractPost[];
   return Promise.all(posts.map(toAppPost));
 }
 
