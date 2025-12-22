@@ -28,7 +28,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isConnected: _isConnected, on
   const [selectedPostForSell, setSelectedPostForSell] = useState<Post | null>(null);
   const [allUserNFTs, setAllUserNFTs] = useState<Post[]>([]);
   const [isLoadingNFTs, setIsLoadingNFTs] = useState(false);
-  const [soldNFTs, setSoldNFTs] = useState<any[]>([]);
+  const [soldNFTs, setSoldNFTs] = useState<string[]>([]);
   const [isLoadingSoldNFTs, setIsLoadingSoldNFTs] = useState(false);
 
   const fetchAllUserNFTs = async () => {

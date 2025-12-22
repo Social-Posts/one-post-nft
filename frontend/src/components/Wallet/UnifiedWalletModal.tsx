@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Wallet, ExternalLink, Smartphone, Download, AlertCircle } from 'lucide-react';
 import { useConnect, useAccount } from 'wagmi';
+import type { Connector } from 'wagmi';
 import { toast } from 'sonner';
 
 interface UnifiedWalletModalProps {
@@ -64,19 +65,20 @@ const UnifiedWalletModal: React.FC<UnifiedWalletModalProps> = ({
       }
 
       await connect({ connector });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Wallet connection error:', error);
+      const msg = (error as { message?: string })?.message || '';
 
-      if (error.message?.includes('User rejected') || error.message?.includes('rejected')) {
+      if (msg.includes('User rejected') || msg.includes('rejected')) {
         toast.error('❌ Connection cancelled by user');
       } else {
-        toast.error(`❌ Failed to connect: ${error.message || 'Please try again'}`);
+        toast.error(`❌ Failed to connect: ${msg || 'Please try again'}`);
       }
       setConnectingWalletId(null);
     }
   };
 
-  const renderWalletCard = (connector: any) => {
+  const renderWalletCard = (connector: Connector) => {
     const isCurrentlyConnecting = connectingWalletId === connector.id;
 
     return (

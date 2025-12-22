@@ -38,6 +38,8 @@ import { ChatService, type ChatUser, type Message } from '@/services/chatService
 import { toast } from '@/components/ui/sonner';
 import EmojiPicker from 'emoji-picker-react';
 import { formatTimeAgo, useRealTimeTimestamp } from '@/utils/timeUtils';
+import type { Post } from '@/context/AppContext';
+import type { EmojiClickData } from 'emoji-picker-react';
 
 import { getUserPosts } from '@/services/contract';
 import { getFromIPFS } from '@/services/ipfs';
@@ -200,7 +202,7 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
   const [showNFTsForSale, setShowNFTsForSale] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([]);
-  const [userNFTsForSale, setUserNFTsForSale] = useState<any[]>([]);
+  const [userNFTsForSale, setUserNFTsForSale] = useState<Post[]>([]);
   const [loadingNFTs, setLoadingNFTs] = useState(false);
 
   // Load chats from Supabase
@@ -408,7 +410,7 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
     setShowNFTsForSale(true);
   };
 
-  const handleBuyNFT = async (nft: any) => {
+  const handleBuyNFT = async (nft: Post) => {
     // Open buy modal with payment method selection
     const event = new CustomEvent('openBuyModal', { detail: { post: nft } });
     window.dispatchEvent(event);
@@ -423,7 +425,7 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
     toast.success('Address copied to clipboard!');
   };
 
-  const handleEmojiSelect = (emojiData: any) => {
+  const handleEmojiSelect = (emojiData: EmojiClickData) => {
     setNewMessage(prev => prev + emojiData.emoji);
     setShowEmojiPicker(false);
   };
