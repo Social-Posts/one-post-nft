@@ -77,7 +77,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
 
         if (result) {
           // Transaction submitted successfully
-        } else {
         }
       } catch (error) {
         console.error('Failed to create post:', error);
@@ -97,7 +96,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
     const success = await startCamera();
     if (success) {
       setActiveTab('camera');
-    } else {
     }
   };
 
