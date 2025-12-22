@@ -1,0 +1,39 @@
+name: Gas report
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  gas-report:
+    name: Run gas report
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Foundry
+        run: |
+          curl -L https://foundry.paradigm.xyz | bash
+          source ~/.bashrc || true
+          foundryup || true
+
+      - name: Install dependencies
+        run: |
+          # ensure cargo bin is on PATH
+          export PATH="$HOME/.foundry/bin:$PATH"
+          forge --version
+
+      - name: Run gas report
+        run: |
+          export PATH="$HOME/.foundry/bin:$PATH"
+          mkdir -p artifacts/gas
+          # Capture the forge test output with gas report
+          forge test --gas-report 2>&1 | tee artifacts/gas/gas-report.txt
+
+      - name: Upload gas report
+        uses: actions/upload-artifact@v3
+        with:
+          name: gas-report
+          path: artifacts/gas/gas-report.txt
