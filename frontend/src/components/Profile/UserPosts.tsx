@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,7 +53,7 @@ const UserPosts: React.FC = () => {
     loadLikeData();
   }, [address, posts]);
 
-  const loadUserNFTs = async () => {
+  const loadUserNFTs = useCallback(async () => {
     if (!address) return;
 
     setIsLoading(true);
@@ -70,13 +70,13 @@ const UserPosts: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [address]);
 
   useEffect(() => {
     if (isConnected && address) {
       loadUserNFTs();
     }
-  }, [isConnected, address]);
+  }, [isConnected, address, loadUserNFTs]);
 
   const handleLike = async (post: Post) => {
     if (!address) {

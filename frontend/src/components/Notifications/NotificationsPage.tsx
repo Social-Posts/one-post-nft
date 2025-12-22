@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,7 +49,7 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
 
   // Load notifications
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     if (!address) return;
 
     try {
@@ -62,11 +62,11 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
     } finally {
       setLoading(false);
     }
-  };
+  }, [address]);
 
   useEffect(() => {
     loadNotifications();
-  }, [address]);
+  }, [loadNotifications]);
 
   // Mark notification as read
   const markAsRead = async (notificationId: string) => {

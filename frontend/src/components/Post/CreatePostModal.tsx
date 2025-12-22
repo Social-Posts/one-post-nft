@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -48,6 +48,22 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
   const remainingChars = MAX_CHARS - content.length;
 
   // Auto-start camera when switching to camera tab
+  const handleStartCamera = useCallback(async () => {
+    const success = await startCamera();
+    if (success) {
+      setActiveTab('camera');
+    }
+  }, [startCamera]);
+
+  const handleCapturePhoto = useCallback(() => {
+    const photo = capturePhoto();
+    if (photo) {
+      setCapturedImage(photo);
+      stopCamera();
+      setActiveTab('preview');
+    }
+  }, [capturePhoto, stopCamera]);
+
   useEffect(() => {
     if (activeTab === 'camera' && !isCameraActive && isCameraSupported) {
       handleStartCamera();
@@ -57,7 +73,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
     if (activeTab !== 'camera' && isCameraActive) {
       stopCamera();
     }
-  }, [activeTab]);
+  }, [activeTab, isCameraActive, isCameraSupported, handleStartCamera, stopCamera]);
 
   // Focus the textarea when the modal opens
   useEffect(() => {
@@ -100,21 +116,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
     setShowEmojiPicker(false);
   };
 
-  const handleStartCamera = async () => {
-    const success = await startCamera();
-    if (success) {
-      setActiveTab('camera');
-    }
-  };
-
-  const handleCapturePhoto = () => {
-    const photo = capturePhoto();
-    if (photo) {
-      setCapturedImage(photo);
-      stopCamera();
-      setActiveTab('preview');
-    }
-  };
+  // (moved implementations to memoized callbacks above)
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

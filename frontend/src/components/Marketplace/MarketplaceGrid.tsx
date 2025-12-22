@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -83,11 +83,7 @@ const MarketplaceGrid: React.FC<MarketplaceGridProps> = ({ onNavigate }) => {
     loadLikeData();
   }, [address, posts]);
 
-  useEffect(() => {
-    fetchMarketplacePosts();
-  }, [filterType, address]);
-
-  const fetchMarketplacePosts = async () => {
+  const fetchMarketplacePosts = useCallback(async () => {
     try {
       setIsLoading(true);
 
@@ -126,7 +122,11 @@ const MarketplaceGrid: React.FC<MarketplaceGridProps> = ({ onNavigate }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filterType, address]);
+
+  useEffect(() => {
+    fetchMarketplacePosts();
+  }, [fetchMarketplacePosts]);
 
   const handleLike = async (post: Post) => {
     if (!address) {
