@@ -67,7 +67,7 @@ const BrowseSwaps: React.FC = () => {
 
     loadLikeData();
   }, [address, swappablePosts]);
-  const myPosts = state.userPosts || [];
+  const myPosts = React.useMemo(() => state.userPosts || [], [state.userPosts]);
 
   useEffect(() => {
     const load = async () => {

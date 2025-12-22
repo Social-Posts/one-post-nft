@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { NotificationService } from '@/services/notificationService';
 import { ChatService } from '@/services/chatService';
@@ -18,38 +18,33 @@ export const useNotificationCounts = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  // Load counts
-  const loadCounts = async () => {
-    if (!address) {
-      setCounts({ notifications: 0, chats: 0, total: 0 });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const [notificationCount, chatCount] = await Promise.all([
-        NotificationService.getUnreadCount(address),
-        ChatService.getTotalUnreadCount(address)
-      ]);
-
-      const newCounts = {
-        notifications: notificationCount,
-        chats: chatCount,
-        total: notificationCount + chatCount
-      };
-
-      setCounts(newCounts);
-    } catch (error) {
-      console.error('Error loading notification counts:', error);
-      setCounts({ notifications: 0, chats: 0, total: 0 });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Load counts on mount and address change
   useEffect(() => {
-    loadCounts();
+    (async () => {
+      if (!address) {
+        setCounts({ notifications: 0, chats: 0, total: 0 });
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const [notificationCount, chatCount] = await Promise.all([
+          NotificationService.getUnreadCount(address),
+          ChatService.getTotalUnreadCount(address)
+        ]);
+
+        setCounts({
+          notifications: notificationCount,
+          chats: chatCount,
+          total: notificationCount + chatCount
+        });
+      } catch (error) {
+        console.error('Error loading notification counts:', error);
+        setCounts({ notifications: 0, chats: 0, total: 0 });
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [address]);
 
   // Subscribe to real-time updates
@@ -59,9 +54,15 @@ export const useNotificationCounts = () => {
     // Subscribe to new notifications
     const notificationSubscription = NotificationService.subscribeToNotifications(
       address,
-      () => {
+      async () => {
         // Reload counts when new notification arrives
-        loadCounts();
+        try {
+          const notificationCount = await NotificationService.getUnreadCount(address);
+          const chatCount = await ChatService.getTotalUnreadCount(address);
+          setCounts({ notifications: notificationCount, chats: chatCount, total: notificationCount + chatCount });
+        } catch (error) {
+          console.error('Error reloading counts on notification:', error);
+        }
       }
     );
 
@@ -70,12 +71,17 @@ export const useNotificationCounts = () => {
     const setupChatSubscriptions = async () => {
       try {
         const userChats = await ChatService.getUserChats(address);
-        
+
         // Subscribe to each chat for new messages
-        const chatSubscriptions = userChats.map(chat => 
-          ChatService.subscribeToMessages(chat.id, () => {
-            // Reload counts when new message arrives
-            loadCounts();
+        const chatSubscriptions = userChats.map((chat) =>
+          ChatService.subscribeToMessages(chat.id, async () => {
+            try {
+              const notificationCount = await NotificationService.getUnreadCount(address);
+              const chatCount = await ChatService.getTotalUnreadCount(address);
+              setCounts({ notifications: notificationCount, chats: chatCount, total: notificationCount + chatCount });
+            } catch (error) {
+              console.error('Error reloading counts on message:', error);
+            }
           })
         );
 
@@ -88,19 +94,19 @@ export const useNotificationCounts = () => {
 
     type SubscriptionLike = { unsubscribe: () => void };
     let chatSubscriptions: SubscriptionLike[] = [];
-    setupChatSubscriptions().then(subs => {
+    setupChatSubscriptions().then((subs) => {
       chatSubscriptions = subs;
     });
 
     return () => {
       notificationSubscription.unsubscribe();
-      chatSubscriptions.forEach(sub => sub.unsubscribe());
+      chatSubscriptions.forEach((sub) => sub.unsubscribe());
     };
   }, [address]);
 
   // Refresh counts manually
   const refreshCounts = () => {
-    loadCounts();
+    // loadCounts();
   };
 
   // Decrement notification count (when notification is read)

@@ -274,7 +274,7 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
         }
       }
     }
-  }, [loadMessages, chats, address, loadChats]);
+  }, [loadMessages, chats, address, loadChats, onChatCountChange]);
 
   // Initialize chats on mount and when address changes
   useEffect(() => {
