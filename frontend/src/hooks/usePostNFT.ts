@@ -1,6 +1,6 @@
 import { useAccount, useWalletClient } from "wagmi";
 import { useCallback, useState } from "react";
-import { toast } from "sonner";
+import { showErrorToast, showSuccessToast } from "@/utils/toastUtils";
 import {
   createPost,
   proposeSell,
@@ -45,26 +45,24 @@ export const usePostNFT = () => {
       onSuccess?: () => void
     ): Promise<string | null> => {
       if (!address) {
-        toast.error("Please connect your wallet first");
+        showErrorToast(
+          "Wallet not connected",
+          "Please connect your wallet first"
+        );
         return null;
       }
 
       if (!walletClient) {
-        // walletClient may still be undefined even when address is present (race with provider initialization)
-        toast.error("Wallet client not ready. Please try again in a moment.");
+        showErrorToast(
+          "Wallet client not ready",
+          "Please try again in a moment."
+        );
         return null;
       }
 
       try {
         setLoading(true);
         setError(undefined);
-
-        // Check if user can post today
-        // const canPost = await canUserPostToday(address);
-        // if (!canPost) {
-        //   toast.error('You have already posted today. Come back tomorrow!');
-        //   return null;
-        // }
 
         // Prepare metadata for IPFS
         const metadata: PostMetadata = {
@@ -81,7 +79,10 @@ export const usePostNFT = () => {
         // Mint NFT with IPFS hash (price = 0 for regular posts)
         const txHash = await createPost(walletClient, ipfsHash, 0);
 
-        toast.success("Post minted successfully! 🎉 Redirecting to home...");
+        showSuccessToast(
+          "Post minted successfully! 🎉",
+          "Redirecting to home..."
+        );
 
         // Create notification for successful post creation
         try {
@@ -93,7 +94,6 @@ export const usePostNFT = () => {
           );
         } catch (notificationError) {
           console.error("Error creating post notification:", notificationError);
-          // Don't fail the whole operation for notification error
         }
 
         // Call success callback to redirect to home
@@ -107,9 +107,8 @@ export const usePostNFT = () => {
       } catch (err: unknown) {
         console.error("Error in mintPost:", err);
         const errorMessage = (err as Error)?.message || "Failed to mint post";
-        console.error("Error message:", errorMessage);
         setError(errorMessage);
-        toast.error(errorMessage);
+        showErrorToast("Failed to mint post", err);
         return null;
       } finally {
         setLoading(false);
@@ -122,12 +121,15 @@ export const usePostNFT = () => {
   const proposePostSell = useCallback(
     async (tokenId: string, price: number): Promise<string | null> => {
       if (!address) {
-        toast.error("Please connect your wallet first");
+        showErrorToast(
+          "Wallet not connected",
+          "Please connect your wallet first"
+        );
         return null;
       }
 
       if (price <= 0) {
-        toast.error("Price must be greater than 0");
+        showErrorToast("Invalid price", "Price must be greater than 0");
         return null;
       }
 
@@ -136,12 +138,15 @@ export const usePostNFT = () => {
         setError(undefined);
 
         if (!walletClient) {
-          toast.error("Wallet client not ready. Please try again in a moment.");
+          showErrorToast(
+            "Wallet client not ready",
+            "Please try again in a moment."
+          );
           return null;
         }
 
         const txHash = await proposeSell(walletClient, tokenId, price);
-        toast.success("Sell proposal submitted! 💰");
+        showSuccessToast("Sell proposal submitted! 💰");
 
         // Create notification for NFT listing
         try {
@@ -155,7 +160,6 @@ export const usePostNFT = () => {
             "Error creating listing notification:",
             notificationError
           );
-          // Don't fail the whole operation for notification error
         }
 
         return txHash;
@@ -163,7 +167,7 @@ export const usePostNFT = () => {
         const errorMessage =
           (err as Error)?.message || "Failed to propose sell";
         setError(errorMessage);
-        toast.error(errorMessage);
+        showErrorToast("Failed to propose sell", err);
         return null;
       } finally {
         setLoading(false);
@@ -172,13 +176,14 @@ export const usePostNFT = () => {
     [address, walletClient]
   );
 
-  // Accept and reject sell functions removed - direct buying only
-
   // Buy a post directly
   const buyPostDirect = useCallback(
     async (tokenId: string): Promise<string | null> => {
       if (!address) {
-        toast.error("Please connect your wallet first");
+        showErrorToast(
+          "Wallet not connected",
+          "Please connect your wallet first"
+        );
         return null;
       }
 
@@ -187,17 +192,18 @@ export const usePostNFT = () => {
         setError(undefined);
 
         if (!walletClient) {
-          toast.error("Wallet client not ready. Please try again in a moment.");
+          showErrorToast(
+            "Wallet client not ready",
+            "Please try again in a moment."
+          );
           return null;
         }
 
         const txHash = await buyPost(walletClient, tokenId);
-        // Toast handling is done in buyPost function
         return txHash;
       } catch (err: unknown) {
         const errorMessage = (err as Error)?.message || "Failed to buy post";
         setError(errorMessage);
-        // Error toast is handled in buyPost function
         return null;
       } finally {
         setLoading(false);
@@ -210,7 +216,10 @@ export const usePostNFT = () => {
   const cancelSellProposalFunc = useCallback(
     async (proposalId: string): Promise<string | null> => {
       if (!address) {
-        toast.error("Please connect your wallet first");
+        showErrorToast(
+          "Wallet not connected",
+          "Please connect your wallet first"
+        );
         return null;
       }
 
@@ -219,18 +228,21 @@ export const usePostNFT = () => {
         setError(undefined);
 
         if (!walletClient) {
-          toast.error("Wallet client not ready. Please try again in a moment.");
+          showErrorToast(
+            "Wallet client not ready",
+            "Please try again in a moment."
+          );
           return null;
         }
 
         const txHash = await cancelSell(walletClient, proposalId);
-        toast.success("Sell proposal cancelled");
+        showSuccessToast("Sell proposal cancelled");
         return txHash;
       } catch (err: unknown) {
         const errorMessage =
           (err as Error)?.message || "Failed to cancel sell proposal";
         setError(errorMessage);
-        toast.error(errorMessage);
+        showErrorToast("Failed to cancel sell proposal", err);
         return null;
       } finally {
         setLoading(false);
@@ -312,12 +324,30 @@ export const usePostNFT = () => {
   );
 
   const fetchSwapProposals = useCallback(
-    async (userAddress?: string): Promise<Array<{ id: string; tokenId: string; seller: `0x${string}`; isActive: boolean; price: number | string }>> => {
+    async (
+      userAddress?: string
+    ): Promise<
+      Array<{
+        id: string;
+        tokenId: string;
+        seller: `0x${string}`;
+        isActive: boolean;
+        price: number | string;
+      }>
+    > => {
       const addressToCheck = userAddress || address;
       if (!addressToCheck) return [];
 
       try {
-        return await getSellProposals(addressToCheck as `0x${string}`) as Array<{ id: string; tokenId: string; seller: `0x${string}`; isActive: boolean; price: number | string }>;
+        return (await getSellProposals(
+          addressToCheck as `0x${string}`
+        )) as Array<{
+          id: string;
+          tokenId: string;
+          seller: `0x${string}`;
+          isActive: boolean;
+          price: number | string;
+        }>;
       } catch (err: unknown) {
         const errorMessage =
           (err as Error)?.message || "Failed to fetch sell proposals";

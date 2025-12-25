@@ -1,16 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Loader2, Calendar, TrendingUp, Wallet } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import PostCard from '@/components/Feed/PostCard';
-import { getAllPosts } from '@/services/contract';
-import type { Post } from '@/context/AppContext';
-import { LikesService } from '@/services/chatService';
-import onePostNftLogo from '@/Images/onepostnft_image.png';
-import ConnectWalletButton from '@/components/Wallet/ConnectWalletButton';
-import { useAccount } from 'wagmi';
+import React, { useState, useEffect, useCallback } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { RefreshCw, Loader2, Calendar, TrendingUp, Wallet } from "lucide-react";
+import {
+  showErrorToast,
+  showSuccessToast,
+  showInfoToast,
+} from "@/utils/toastUtils";
+import PostCard from "@/components/Feed/PostCard";
+import { getAllPosts } from "@/services/contract";
+import type { Post } from "@/context/AppContext";
+import { LikesService } from "@/services/chatService";
+import onePostNftLogo from "@/Images/onepostnft_image.png";
+import ConnectWalletButton from "@/components/Wallet/ConnectWalletButton";
+import { useAccount } from "wagmi";
 
 const UserPosts: React.FC = () => {
   const { address, isConnected } = useAccount();
@@ -27,8 +31,8 @@ const UserPosts: React.FC = () => {
       try {
         const likePromises = posts.map(async (post) => {
           const [isLiked, count] = await Promise.all([
-            LikesService.hasUserLiked(address, 'post', post.tokenId),
-            LikesService.getLikeCount('post', post.tokenId)
+            LikesService.hasUserLiked(address, "post", post.tokenId),
+            LikesService.getLikeCount("post", post.tokenId),
           ]);
           return { tokenId: post.tokenId, isLiked, count };
         });
@@ -46,7 +50,7 @@ const UserPosts: React.FC = () => {
         setLikedPosts(newLikedPosts);
         setLikeCounts(newLikeCounts);
       } catch (error) {
-        console.error('Error loading like data:', error);
+        console.error("Error loading like data:", error);
       }
     };
 
@@ -60,13 +64,13 @@ const UserPosts: React.FC = () => {
     try {
       // Get all posts and filter by current owner (includes bought NFTs)
       const allPosts = await getAllPosts(0, 1000);
-      const userNFTs = allPosts.filter(post =>
-        post.currentOwner.toLowerCase() === address.toLowerCase()
+      const userNFTs = allPosts.filter(
+        (post) => post.currentOwner.toLowerCase() === address.toLowerCase()
       );
       setPosts(userNFTs);
     } catch (error) {
-      console.error('Failed to load user NFTs:', error);
-      toast.error('Failed to load your NFTs');
+      console.error("Failed to load user NFTs:", error);
+      showErrorToast("Failed to load your NFTs", error);
     } finally {
       setIsLoading(false);
     }
@@ -80,14 +84,17 @@ const UserPosts: React.FC = () => {
 
   const handleLike = async (post: Post) => {
     if (!address) {
-      toast.error('Please connect your wallet to like posts');
+      showErrorToast(
+        "Wallet not connected",
+        "Please connect your wallet to like posts"
+      );
       return;
     }
 
     try {
       const result = await LikesService.toggleLike(
         address,
-        'post',
+        "post",
         post.tokenId,
         post.author
       );
@@ -97,36 +104,36 @@ const UserPosts: React.FC = () => {
 
       if (result.liked) {
         newLikedPosts.add(post.tokenId);
-        toast.success('❤️ Liked!');
+        showSuccessToast("❤️ Liked!");
       } else {
         newLikedPosts.delete(post.tokenId);
-        toast.success('💔 Unliked');
+        showSuccessToast("💔 Unliked");
       }
 
       newLikeCounts[post.tokenId] = result.count;
       setLikedPosts(newLikedPosts);
       setLikeCounts(newLikeCounts);
     } catch (error) {
-      console.error('Error toggling like:', error);
-      toast.error('Failed to update like');
+      console.error("Error toggling like:", error);
+      showErrorToast("Failed to update like", error);
     }
   };
 
   const handleShare = (post: Post) => {
     if (navigator.share) {
       navigator.share({
-        title: 'Check out this NFT post!',
+        title: "Check out this NFT post!",
         text: post.content,
         url: window.location.href,
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      toast.success('Link copied to clipboard!');
+      showSuccessToast("Link copied to clipboard!");
     }
   };
 
   const handleSell = (_post: Post) => {
-    toast.success('Sell functionality coming soon!');
+    showInfoToast("Coming Soon", "Sell functionality coming soon!");
   };
 
   if (!isConnected) {
@@ -143,8 +150,11 @@ const UserPosts: React.FC = () => {
   }
 
   const totalNFTs = posts.length;
-  const totalLikes = Object.values(likeCounts).reduce((sum, count) => sum + count, 0);
-  const avgLikes = totalNFTs > 0 ? (totalLikes / totalNFTs).toFixed(1) : '0';
+  const totalLikes = Object.values(likeCounts).reduce(
+    (sum, count) => sum + count,
+    0
+  );
+  const avgLikes = totalNFTs > 0 ? (totalLikes / totalNFTs).toFixed(1) : "0";
 
   return (
     <div className="space-y-6">
@@ -164,7 +174,7 @@ const UserPosts: React.FC = () => {
               <p className="text-muted-foreground">NFTs you own and created</p>
             </div>
           </div>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -172,7 +182,9 @@ const UserPosts: React.FC = () => {
             disabled={isLoading}
             className="flex items-center gap-2"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+            />
             Refresh
           </Button>
         </div>
@@ -184,13 +196,13 @@ const UserPosts: React.FC = () => {
             <div className="text-2xl font-bold">{totalNFTs}</div>
             <div className="text-sm text-muted-foreground">Total NFTs</div>
           </div>
-          
+
           <div className="text-center p-4 bg-muted/50 rounded-lg">
             <TrendingUp className="w-6 h-6 mx-auto mb-2 text-success" />
             <div className="text-2xl font-bold">{totalLikes}</div>
             <div className="text-sm text-muted-foreground">Total Likes</div>
           </div>
-          
+
           <div className="text-center p-4 bg-muted/50 rounded-lg">
             <div className="w-6 h-6 mx-auto mb-2 rounded overflow-hidden flex items-center justify-center">
               <img
@@ -217,7 +229,9 @@ const UserPosts: React.FC = () => {
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <span className="ml-2 text-muted-foreground">Loading your NFTs...</span>
+            <span className="ml-2 text-muted-foreground">
+              Loading your NFTs...
+            </span>
           </div>
         ) : posts.length === 0 ? (
           <div className="text-center py-12">
@@ -230,7 +244,8 @@ const UserPosts: React.FC = () => {
             </div>
             <h3 className="text-lg font-semibold mb-2">No NFTs Yet</h3>
             <p className="text-muted-foreground mb-4">
-              Create your first NFT post or buy NFTs from the marketplace to see them here!
+              Create your first NFT post or buy NFTs from the marketplace to see
+              them here!
             </p>
           </div>
         ) : (
@@ -245,7 +260,9 @@ const UserPosts: React.FC = () => {
                 showSellButton={true}
                 isLiked={likedPosts.has(post.tokenId)}
                 likeCount={likeCounts[post.tokenId] || 0}
-                isOwner={post.currentOwner?.toLowerCase() === address?.toLowerCase()}
+                isOwner={
+                  post.currentOwner?.toLowerCase() === address?.toLowerCase()
+                }
                 isForSale={post.isForSale || false}
               />
             ))}

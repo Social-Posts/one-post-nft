@@ -16,7 +16,7 @@ import onePostNftLogo from "@/Images/baselogo.png";
 import { useAppContext } from "@/context/AppContext";
 import { useCamera } from "@/hooks/useCamera";
 import { usePostNFT } from "@/hooks/usePostNFT";
-import { toast } from "sonner";
+import { showErrorToast } from "@/utils/toastUtils";
 import EmojiPickerComponent from "./EmojiPicker";
 import ConnectWalletButton from "@/components/Wallet/ConnectWalletButton";
 import { useAccount } from "wagmi";
@@ -121,7 +121,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     const validationError = validate();
     if (validationError) {
       setError(validationError);
-      toast.error(validationError);
+      showErrorToast("Validation Error", validationError);
       return;
     }
 
@@ -150,7 +150,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       }
     } catch (error) {
       console.error("Failed to create post:", error);
-      toast.error("Failed to create post. Please try again.");
+      showErrorToast("Failed to create post", error);
     }
   };
 
@@ -166,7 +166,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        toast.error("Image must be less than 2MB");
+        showErrorToast("File too large", "Image must be less than 2MB");
         return;
       }
 
