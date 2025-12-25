@@ -15,7 +15,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/your-repo/one-post-nft.git
+   git clone https://github.com/Social-Posts/one-post-nft.git
    ```
 2. Navigate to the frontend directory:
    ```sh
@@ -26,40 +26,39 @@ These instructions will get you a copy of the project up and running on your loc
    npm install
    ```
 
+### Environment Configuration
 
-### Setting Up Supabase
+The application requires several environment variables to function correctly. Create a `.env.local` file in the `frontend` directory:
+
+```sh
+cp .env.local.example .env.local
+```
+
+Then edit `.env.local` with your configuration:
+
+```env
+# Contract address for OnePostNFT
+VITE_CONTRACT_ADDRESS=0x...
+
+# Supabase configuration (for chat and notifications)
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key_here
+
+# Network (mainnet or sepolia)
+VITE_NETWORK=sepolia
+```
+
+#### Supabase Setup
 
 The application uses **Supabase** for real-time chat and user data storage.
 
 1. Create a project at [supabase.com](https://supabase.com)
-2. Get your API credentials from **Settings > API**:
-   - `VITE_SUPABASE_URL`: Your project URL
-   - `VITE_SUPABASE_ANON_KEY`: Your anonymous public key
-3. Copy `.env.example` to `.env.local` and fill in your credentials:
-   ```sh
-   cp .env.example .env.local
-   ```
-   Then edit `.env.local` with your actual Supabase credentials:
-   ```env
-   VITE_SUPABASE_URL=https://your-project.supabase.co
-   VITE_SUPABASE_ANON_KEY=your_anon_key_here
-   ```
+2. Get your API credentials from **Settings > API**.
+3. Run the SQL scripts provided in `SUPABASE_SETUP.md` in your Supabase SQL Editor to initialize the database schema.
 
-### Environment Configuration
+#### IPFS Setup
 
-Create a `.env.local` file in the `frontend` directory with the following variables:
-
-```env
-# Contract address for OnePostNFT (Base Sepolia or Base Mainnet)
-VITE_CONTRACT_ADDRESS=0x987029D7a894FcbDdD9e819fF177c0D44CCaF0Ce
-
-# Supabase configuration
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-**Note:** If `VITE_CONTRACT_ADDRESS` is not set, the app will use a default address. Update it with your deployed contract address when ready.
-
+The application uses Pinata for IPFS storage. Ensure you have your Pinata API keys if you plan to modify the IPFS service. Default configuration uses a public gateway for reading.
 
 ### Running the Development Server
 
