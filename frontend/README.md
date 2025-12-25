@@ -15,7 +15,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/your-repo/one-post-nft.git
+   git clone https://github.com/Social-Posts/one-post-nft.git
    ```
 2. Navigate to the frontend directory:
    ```sh
@@ -26,40 +26,39 @@ These instructions will get you a copy of the project up and running on your loc
    npm install
    ```
 
+### Environment Configuration
 
-### Setting Up Supabase
+The application requires several environment variables to function correctly. Create a `.env.local` file in the `frontend` directory:
+
+```sh
+cp .env.local.example .env.local
+```
+
+Then edit `.env.local` with your configuration:
+
+```env
+# Contract address for OnePostNFT
+VITE_CONTRACT_ADDRESS=0x...
+
+# Supabase configuration (for chat and notifications)
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key_here
+
+# Network (mainnet or sepolia)
+VITE_NETWORK=sepolia
+```
+
+#### Supabase Setup
 
 The application uses **Supabase** for real-time chat and user data storage.
 
 1. Create a project at [supabase.com](https://supabase.com)
-2. Get your API credentials from **Settings > API**:
-   - `VITE_SUPABASE_URL`: Your project URL
-   - `VITE_SUPABASE_ANON_KEY`: Your anonymous public key
-3. Copy `.env.example` to `.env.local` and fill in your credentials:
-   ```sh
-   cp .env.example .env.local
-   ```
-   Then edit `.env.local` with your actual Supabase credentials:
-   ```env
-   VITE_SUPABASE_URL=https://your-project.supabase.co
-   VITE_SUPABASE_ANON_KEY=your_anon_key_here
-   ```
+2. Get your API credentials from **Settings > API**.
+3. Run the SQL scripts provided in `SUPABASE_SETUP.md` in your Supabase SQL Editor to initialize the database schema.
 
-### Environment Configuration
+#### IPFS Setup
 
-Create a `.env.local` file in the `frontend` directory with the following variables:
-
-```env
-# Contract address for OnePostNFT (Base Sepolia or Base Mainnet)
-VITE_CONTRACT_ADDRESS=0x987029D7a894FcbDdD9e819fF177c0D44CCaF0Ce
-
-# Supabase configuration
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-**Note:** If `VITE_CONTRACT_ADDRESS` is not set, the app will use a default address. Update it with your deployed contract address when ready.
-
+The application uses Pinata for IPFS storage. Ensure you have your Pinata API keys if you plan to modify the IPFS service. Default configuration uses a public gateway for reading.
 
 ### Running the Development Server
 
@@ -71,6 +70,27 @@ npm run dev
 
 This will start the application on `http://localhost:5173`.
 
+### Local Development Workflow
+
+To link the frontend with a locally running blockchain (e.g., Anvil):
+
+1. **Deploy Contracts Locally:**
+   Navigate to the `smartcontract` directory and deploy your contracts to your local node.
+
+   ```sh
+   cd smartcontract
+   forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast
+   ```
+
+2. **Update Frontend Contract Info:**
+   The frontend uses the contract ABIs and addresses stored in `frontend/src/contracts/deployedContracts.ts`. When you deploy locally, ensure this file is updated with the local contract address.
+
+3. **Update Environment Variables:**
+   Set `VITE_CONTRACT_ADDRESS` in your `.env.local` to the address of your locally deployed contract.
+
+4. **Connect Wallet to Local Network:**
+   Configure your wallet (e.g., MetaMask) to connect to `http://localhost:8545` (Chain ID 31337 for Anvil).
+
 ## Building for Production
 
 To create a production build, run:
@@ -79,7 +99,7 @@ To create a production build, run:
 npm run build
 ```
 
-This will create a `dist` directory with the production-ready files.
+This will create a `dist` directory with the production-ready files. Ensure all environment variables are correctly set in your CI/CD environment.
 
 ## Network
 
@@ -119,3 +139,10 @@ frontend/
 ├── vite.config.ts  # Vite configuration
 └── ...
 ```
+
+## Troubleshooting
+
+- **Wallet Connection Issues:** Ensure your wallet is on the correct network (Base Sepolia or Localhost).
+- **IPFS Upload Failures:** Check your Pinata API keys and ensure you have a stable internet connection.
+- **Chat Not Working:** Verify your Supabase credentials and ensure the database schema is correctly initialized.
+- **Node Version:** If you encounter build errors, ensure you are using Node.js v18 or later.
