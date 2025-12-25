@@ -139,3 +139,10 @@ frontend/
 ├── vite.config.ts  # Vite configuration
 └── ...
 ```
+
+## Troubleshooting
+
+- **Wallet Connection Issues:** Ensure your wallet is on the correct network (Base Sepolia or Localhost).
+- **IPFS Upload Failures:** Check your Pinata API keys and ensure you have a stable internet connection.
+- **Chat Not Working:** Verify your Supabase credentials and ensure the database schema is correctly initialized.
+- **Node Version:** If you encounter build errors, ensure you are using Node.js v18 or later.
