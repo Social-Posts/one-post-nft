@@ -211,6 +211,7 @@ const PostCard: React.FC<PostCardProps> = ({
               <img
                 src={onePostNftLogo}
                 alt="OnePostNft Logo"
+                loading="lazy"
                 className="relative w-32 h-32 md:w-40 md:h-40 object-contain rounded-2xl shadow-2xl animate-bounce-slow"
               />
             </div>
