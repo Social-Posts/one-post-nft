@@ -1,19 +1,25 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Smile, Send, Camera, Image, SparklesIcon, Wallet } from 'lucide-react';
-import onePostNftLogo from '@/Images/baselogo.png';
-import { useAppContext } from '@/context/AppContext';
-import { useCamera } from '@/hooks/useCamera';
-import { usePostNFT } from '@/hooks/usePostNFT';
-import { toast } from 'sonner';
-import EmojiPickerComponent from './EmojiPicker';
-import ConnectWalletButton from '@/components/Wallet/ConnectWalletButton';
-import { useAccount } from 'wagmi';
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Smile, Send, Camera, Image, SparklesIcon, Wallet } from "lucide-react";
+import onePostNftLogo from "@/Images/baselogo.png";
+import { useAppContext } from "@/context/AppContext";
+import { useCamera } from "@/hooks/useCamera";
+import { usePostNFT } from "@/hooks/usePostNFT";
+import { toast } from "sonner";
+import EmojiPickerComponent from "./EmojiPicker";
+import ConnectWalletButton from "@/components/Wallet/ConnectWalletButton";
+import { useAccount } from "wagmi";
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -21,12 +27,16 @@ interface CreatePostModalProps {
   onPostSuccess?: () => void;
 }
 
-const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPostSuccess }) => {
-  const [content, setContent] = useState('');
+const CreatePostModal: React.FC<CreatePostModalProps> = ({
+  isOpen,
+  onClose,
+  onPostSuccess,
+}) => {
+  const [content, setContent] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState('text');
+  const [activeTab, setActiveTab] = useState("text");
 
   const { createPost, state } = useAppContext();
   const { mintPost, isLoading: isMinting } = usePostNFT();
@@ -38,7 +48,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
     stopCamera,
     capturePhoto,
 
-    isSupported: isCameraSupported
+    isSupported: isCameraSupported,
   } = useCamera();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -51,7 +61,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
   const handleStartCamera = useCallback(async () => {
     const success = await startCamera();
     if (success) {
-      setActiveTab('camera');
+      setActiveTab("camera");
     }
   }, [startCamera]);
 
@@ -60,20 +70,26 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
     if (photo) {
       setCapturedImage(photo);
       stopCamera();
-      setActiveTab('preview');
+      setActiveTab("preview");
     }
   }, [capturePhoto, stopCamera]);
 
   useEffect(() => {
-    if (activeTab === 'camera' && !isCameraActive && isCameraSupported) {
+    if (activeTab === "camera" && !isCameraActive && isCameraSupported) {
       handleStartCamera();
     }
 
     // Stop camera when switching away from camera tab
-    if (activeTab !== 'camera' && isCameraActive) {
+    if (activeTab !== "camera" && isCameraActive) {
       stopCamera();
     }
-  }, [activeTab, isCameraActive, isCameraSupported, handleStartCamera, stopCamera]);
+  }, [
+    activeTab,
+    isCameraActive,
+    isCameraSupported,
+    handleStartCamera,
+    stopCamera,
+  ]);
 
   // Focus the textarea when the modal opens
   useEffect(() => {
@@ -82,38 +98,66 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
     }
   }, [isOpen]);
 
+  const [error, setError] = useState<string | null>(null);
+
+  const validate = (): string | null => {
+    if (!content.trim() && !capturedImage) {
+      return "Please add some content or an image to your post";
+    }
+    if (content.length > MAX_CHARS) {
+      return `Content must be less than ${MAX_CHARS} characters`;
+    }
+    if (
+      content.trim().length > 0 &&
+      content.trim().length < 3 &&
+      !capturedImage
+    ) {
+      return "Content must be at least 3 characters long";
+    }
+    return null;
+  };
+
   const handleSubmit = async () => {
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      toast.error(validationError);
+      return;
+    }
 
-    if ((content.trim() || capturedImage) && remainingChars >= 0) {
-      try {
-        // Use the actual content, allow empty content for image-only posts
-        const finalContent = content.trim();
+    setError(null);
+    try {
+      // Use the actual content, allow empty content for image-only posts
+      const finalContent = content.trim();
 
-        const result = await mintPost(finalContent, capturedImage || undefined, () => {
+      const result = await mintPost(
+        finalContent,
+        capturedImage || undefined,
+        () => {
           // Success callback - redirect to home
-          setContent('');
+          setContent("");
           setCapturedImage(null);
+          setError(null);
           onClose();
           if (onPostSuccess) {
             onPostSuccess();
           }
-        });
-
-        if (result) {
-          // Transaction submitted successfully
         }
-      } catch (error) {
-        console.error('Failed to create post:', error);
-        toast.error('Failed to create post. Please try again.');
+      );
+
+      if (result) {
+        // Transaction submitted successfully
       }
-    } else {
-      toast.error('Please add some content or an image to your post');
+    } catch (error) {
+      console.error("Failed to create post:", error);
+      toast.error("Failed to create post. Please try again.");
     }
   };
 
   const handleEmojiSelect = (emoji: string) => {
-    setContent(prev => prev + emoji);
+    setContent((prev) => prev + emoji);
     setShowEmojiPicker(false);
+    setError(null);
   };
 
   // (moved implementations to memoized callbacks above)
@@ -122,25 +166,25 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        toast.error('Image must be less than 2MB');
+        toast.error("Image must be less than 2MB");
         return;
       }
 
       const reader = new FileReader();
       reader.onload = (e) => {
         setCapturedImage(e.target?.result as string);
-        setActiveTab('preview');
+        setActiveTab("preview");
+        setError(null);
       };
       reader.readAsDataURL(file);
     }
   };
 
-
-
   const handleClose = () => {
     stopCamera();
     setCapturedImage(null);
-    setContent('');
+    setContent("");
+    setError(null);
     onClose();
   };
 
@@ -173,200 +217,256 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
             <ConnectWalletButton />
           </div>
         ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="text">Text</TabsTrigger>
-            <TabsTrigger value="camera" disabled={!isCameraSupported}>Camera</TabsTrigger>
-            <TabsTrigger value="upload">Upload</TabsTrigger>
-            <TabsTrigger value="preview" disabled={!capturedImage}>Preview</TabsTrigger>
-          </TabsList>
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="space-y-4"
+          >
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="text">Text</TabsTrigger>
+              <TabsTrigger value="camera" disabled={!isCameraSupported}>
+                Camera
+              </TabsTrigger>
+              <TabsTrigger value="upload">Upload</TabsTrigger>
+              <TabsTrigger value="preview" disabled={!capturedImage}>
+                Preview
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="text" className="space-y-4">
-            <div className="relative">
-              <label htmlFor="create-post-content" className="sr-only">Post content</label>
-              <Textarea
-                id="create-post-content"
-                ref={textareaRef}
-                placeholder="What's on your mind today? This post will become your unique NFT..."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="min-h-[120px] resize-none border-border bg-background"
-                maxLength={MAX_CHARS}
-                aria-describedby="create-post-desc create-post-chars"
-              />
-              <p id="create-post-desc" className="sr-only">You may add text or an image to mint as an NFT. Maximum {MAX_CHARS} characters.</p>
-
-              <div className="flex items-center justify-between mt-2">
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    aria-expanded={showEmojiPicker}
-                    aria-controls="emoji-picker"
-                    aria-label={showEmojiPicker ? 'Close emoji picker' : 'Open emoji picker'}
-                  >
-                    <Smile className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                <Badge id="create-post-chars" variant={remainingChars < 0 ? 'destructive' : 'secondary'} aria-live="polite" aria-atomic="true">
-                  {remainingChars} chars
-                </Badge>
-              </div>
-
-              {showEmojiPicker && (
-                <div id="emoji-picker" className="absolute top-full left-0 z-50 mt-2">
-                  <EmojiPickerComponent onEmojiSelect={handleEmojiSelect} />
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="camera" className="space-y-4">
-            <Card className="p-4 bg-background">
-              <div className="space-y-4">
-                <div className="relative">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-48 sm:h-64 md:h-72 lg:h-80 object-cover rounded-lg bg-black"
-                    aria-label="Camera preview"
-                    role="img"
-                    style={{ backgroundColor: '#000' }}
-                  />
-                  {!isCameraActive && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
-                      <div className="text-white text-center space-y-3">
-                        <Camera className="w-12 h-12 mx-auto animate-pulse" />
-                        <div>
-                          <p className="font-medium">Starting camera...</p>
-                          <p className="text-sm text-gray-300 mt-1">Please allow camera access</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="text-center text-sm text-muted-foreground">
-                  <p>📸 Position yourself and click capture when ready</p>
-                  <p className="text-xs mt-1">No filters applied - just you!</p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button
-                    onClick={handleCapturePhoto}
-                    disabled={!isCameraActive}
-                    className="flex-1 bg-primary hover:bg-primary/90"
-                    aria-label={isCameraActive ? 'Capture photo' : 'Camera starting'}
-                  >
-                    <Camera className="w-4 h-4 mr-2" />
-                    {isCameraActive ? 'Capture Photo' : 'Starting...'}
-                  </Button>
-                  <Button variant="outline" onClick={() => setActiveTab('text')} className="sm:w-auto">
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="upload" className="space-y-4">
-            <Card className="p-4 bg-background">
-              <div className="text-center space-y-4">
-                <Image className="w-12 h-12 mx-auto text-muted-foreground" />
-                <div>
-                  <h3 className="font-medium">Upload Image</h3>
-                  <p className="text-sm text-muted-foreground">Select an image from your device (max 2MB)</p>
-                </div>
-                <label htmlFor="create-post-file" className="inline-flex items-center justify-center px-4 py-2 rounded bg-accent text-white cursor-pointer">
-                  <Image className="w-4 h-4 mr-2" />
-                  Choose Image
+            <TabsContent value="text" className="space-y-4">
+              <div className="relative">
+                <label htmlFor="create-post-content" className="sr-only">
+                  Post content
                 </label>
-                <input
-                  id="create-post-file"
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="sr-only"
-                  aria-label="Upload image to attach to post"
+                <Textarea
+                  id="create-post-content"
+                  ref={textareaRef}
+                  placeholder="What's on your mind today? This post will become your unique NFT..."
+                  value={content}
+                  onChange={(e) => {
+                    setContent(e.target.value);
+                    if (error) setError(null);
+                  }}
+                  className={`min-h-[120px] resize-none border-border bg-background ${
+                    error ? "border-destructive ring-1 ring-destructive" : ""
+                  }`}
+                  maxLength={MAX_CHARS}
+                  aria-describedby="create-post-desc create-post-chars"
                 />
-              </div>
-            </Card>
-          </TabsContent>
+                <p id="create-post-desc" className="sr-only">
+                  You may add text or an image to mint as an NFT. Maximum{" "}
+                  {MAX_CHARS} characters.
+                </p>
 
-          <TabsContent value="preview" className="space-y-4">
-            {capturedImage && (
+                <div className="flex items-center justify-between mt-2">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                        aria-expanded={showEmojiPicker}
+                        aria-controls="emoji-picker"
+                        aria-label={
+                          showEmojiPicker
+                            ? "Close emoji picker"
+                            : "Open emoji picker"
+                        }
+                      >
+                        <Smile className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    {error && (
+                      <p className="text-xs text-destructive font-medium animate-in fade-in slide-in-from-top-1">
+                        {error}
+                      </p>
+                    )}
+                  </div>
+
+                  <Badge
+                    id="create-post-chars"
+                    variant={remainingChars < 0 ? "destructive" : "secondary"}
+                    aria-live="polite"
+                    aria-atomic="true"
+                  >
+                    {remainingChars} chars
+                  </Badge>
+                </div>
+
+                {showEmojiPicker && (
+                  <div
+                    id="emoji-picker"
+                    className="absolute top-full left-0 z-50 mt-2"
+                  >
+                    <EmojiPickerComponent onEmojiSelect={handleEmojiSelect} />
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="camera" className="space-y-4">
               <Card className="p-4 bg-background">
                 <div className="space-y-4">
-                  <img
-                    src={capturedImage}
-                    alt="Captured preview of the image to attach to the post"
-                    className="w-full h-64 object-cover rounded-lg"
-                  />
-                  <div className="flex gap-2">
+                  <div className="relative">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-48 sm:h-64 md:h-72 lg:h-80 object-cover rounded-lg bg-black"
+                      aria-label="Camera preview"
+                      role="img"
+                      style={{ backgroundColor: "#000" }}
+                    />
+                    {!isCameraActive && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+                        <div className="text-white text-center space-y-3">
+                          <Camera className="w-12 h-12 mx-auto animate-pulse" />
+                          <div>
+                            <p className="font-medium">Starting camera...</p>
+                            <p className="text-sm text-gray-300 mt-1">
+                              Please allow camera access
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-center text-sm text-muted-foreground">
+                    <p>📸 Position yourself and click capture when ready</p>
+                    <p className="text-xs mt-1">
+                      No filters applied - just you!
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Button
-                      variant="outline"
-                      onClick={() => {
-                        setCapturedImage(null);
-                        setActiveTab('camera');
-                      }}
-                      aria-label="Retake photo"
+                      onClick={handleCapturePhoto}
+                      disabled={!isCameraActive}
+                      className="flex-1 bg-primary hover:bg-primary/90"
+                      aria-label={
+                        isCameraActive ? "Capture photo" : "Camera starting"
+                      }
                     >
-                      Retake
+                      <Camera className="w-4 h-4 mr-2" />
+                      {isCameraActive ? "Capture Photo" : "Starting..."}
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => setCapturedImage(null)}
-                      aria-label="Remove photo"
+                      onClick={() => setActiveTab("text")}
+                      className="sm:w-auto"
                     >
-                      Remove
+                      Cancel
                     </Button>
                   </div>
                 </div>
               </Card>
-            )}
-          </TabsContent>
+            </TabsContent>
 
-          {content.trim() && (
-            <Card className="p-4 bg-muted border-border animate-fade-in">
-              <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                <SparklesIcon className="w-4 h-4 text-primary" />
-                NFT Preview:
-              </h4>
-              <p className="text-sm text-foreground whitespace-pre-wrap">
-                {content}
-              </p>
+            <TabsContent value="upload" className="space-y-4">
+              <Card className="p-4 bg-background">
+                <div className="text-center space-y-4">
+                  <Image className="w-12 h-12 mx-auto text-muted-foreground" />
+                  <div>
+                    <h3 className="font-medium">Upload Image</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Select an image from your device (max 2MB)
+                    </p>
+                  </div>
+                  <label
+                    htmlFor="create-post-file"
+                    className="inline-flex items-center justify-center px-4 py-2 rounded bg-accent text-white cursor-pointer"
+                  >
+                    <Image className="w-4 h-4 mr-2" />
+                    Choose Image
+                  </label>
+                  <input
+                    id="create-post-file"
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="sr-only"
+                    aria-label="Upload image to attach to post"
+                  />
+                </div>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="preview" className="space-y-4">
               {capturedImage && (
-                <img
-                  src={capturedImage}
-                  alt="Attached"
-                  className="mt-2 w-full h-32 object-cover rounded"
-                />
+                <Card className="p-4 bg-background">
+                  <div className="space-y-4">
+                    <img
+                      src={capturedImage}
+                      alt="Captured preview of the image to attach to the post"
+                      className="w-full h-64 object-cover rounded-lg"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setCapturedImage(null);
+                          setActiveTab("camera");
+                        }}
+                        aria-label="Retake photo"
+                      >
+                        Retake
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setCapturedImage(null)}
+                        aria-label="Remove photo"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
               )}
-            </Card>
-          )}
+            </TabsContent>
 
-          <div className="flex items-center gap-3 pt-4">
-            <Button
-              onClick={handleSubmit}
-              disabled={(!content.trim() && !capturedImage) || remainingChars < 0 || isMinting}
-              className="flex-1 bg-primary hover:bg-primary/90 animate-scale-in"
-              aria-label="Post and mint NFT"
-            >
-              <Send className="w-4 h-4 mr-2" />
-              {isMinting ? 'Minting NFT...' : 'Post & Mint NFT'}
-            </Button>
+            {content.trim() && (
+              <Card className="p-4 bg-muted border-border animate-fade-in">
+                <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                  <SparklesIcon className="w-4 h-4 text-primary" />
+                  NFT Preview:
+                </h4>
+                <p className="text-sm text-foreground whitespace-pre-wrap">
+                  {content}
+                </p>
+                {capturedImage && (
+                  <img
+                    src={capturedImage}
+                    alt="Attached"
+                    className="mt-2 w-full h-32 object-cover rounded"
+                  />
+                )}
+              </Card>
+            )}
 
-            <Button variant="outline" onClick={handleClose}>
-              Cancel
-            </Button>
-          </div>
-        </Tabs>
+            <div className="flex items-center gap-3 pt-4">
+              <Button
+                onClick={handleSubmit}
+                disabled={
+                  (!content.trim() && !capturedImage) ||
+                  remainingChars < 0 ||
+                  isMinting
+                }
+                className="flex-1 bg-primary hover:bg-primary/90 animate-scale-in"
+                aria-label="Post and mint NFT"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                {isMinting ? "Minting NFT..." : "Post & Mint NFT"}
+              </Button>
+
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+            </div>
+          </Tabs>
         )}
       </DialogContent>
     </Dialog>
