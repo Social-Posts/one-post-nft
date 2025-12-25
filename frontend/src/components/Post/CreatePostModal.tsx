@@ -286,11 +286,23 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
                   <Badge
                     id="create-post-chars"
-                    variant={remainingChars < 0 ? "destructive" : "secondary"}
+                    variant={
+                      remainingChars < 0
+                        ? "destructive"
+                        : remainingChars < 20
+                        ? "outline"
+                        : "secondary"
+                    }
+                    className={
+                      remainingChars < 20 && remainingChars >= 0
+                        ? "text-orange-500 border-orange-500"
+                        : ""
+                    }
                     aria-live="polite"
                     aria-atomic="true"
                   >
-                    {remainingChars} chars
+                    {remainingChars} chars{" "}
+                    {remainingChars === 0 && " (Limit reached)"}
                   </Badge>
                 </div>
 
