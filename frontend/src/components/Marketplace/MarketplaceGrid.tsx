@@ -11,7 +11,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RefreshCw, Loader2, ShoppingCart, Search, Filter } from "lucide-react";
-import { toast } from "sonner";
+import {
+  showErrorToast,
+  showSuccessToast,
+  showLoadingToast,
+  dismissToast,
+} from "@/utils/toastUtils";
 import {
   getAllPosts,
   getAllPostsForSale,
@@ -57,8 +62,8 @@ const MarketplaceGrid: React.FC<MarketplaceGridProps> = ({ onNavigate }) => {
       try {
         const likePromises = posts.map(async (post) => {
           const [isLiked, count] = await Promise.all([
-            LikesService.hasUserLiked(address, 'post', post.tokenId),
-            LikesService.getLikeCount('post', post.tokenId)
+            LikesService.hasUserLiked(address, "post", post.tokenId),
+            LikesService.getLikeCount("post", post.tokenId),
           ]);
           return { tokenId: post.tokenId, isLiked, count };
         });
@@ -118,7 +123,7 @@ const MarketplaceGrid: React.FC<MarketplaceGridProps> = ({ onNavigate }) => {
       setPosts(uniquePosts);
     } catch (error) {
       console.error("Failed to load marketplace posts:", error);
-      toast.error("Failed to load marketplace");
+      showErrorToast("Failed to load marketplace", error);
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +135,10 @@ const MarketplaceGrid: React.FC<MarketplaceGridProps> = ({ onNavigate }) => {
 
   const handleLike = async (post: Post) => {
     if (!address) {
-      toast.error("Please connect your wallet to like posts");
+      showErrorToast(
+        "Wallet not connected",
+        "Please connect your wallet to like posts"
+      );
       return;
     }
     if (likingPost === post.tokenId) return;
@@ -149,10 +157,10 @@ const MarketplaceGrid: React.FC<MarketplaceGridProps> = ({ onNavigate }) => {
 
       if (result.liked) {
         newLikedPosts.add(post.tokenId);
-        toast.success(`❤️ You liked NFT #${post.tokenId}!`, { duration: 2000 });
+        showSuccessToast(`❤️ You liked NFT #${post.tokenId}!`);
       } else {
         newLikedPosts.delete(post.tokenId);
-        toast.success(`💔 Unliked NFT #${post.tokenId}`, { duration: 2000 });
+        showSuccessToast(`💔 Unliked NFT #${post.tokenId}`);
       }
 
       newLikeCounts[post.tokenId] = result.count;
@@ -160,7 +168,7 @@ const MarketplaceGrid: React.FC<MarketplaceGridProps> = ({ onNavigate }) => {
       setLikeCounts(newLikeCounts);
     } catch (error) {
       console.error("Error toggling like:", error);
-      toast.error("Failed to update like");
+      showErrorToast("Failed to update like", error);
     } finally {
       setLikingPost(null);
     }
@@ -175,7 +183,7 @@ const MarketplaceGrid: React.FC<MarketplaceGridProps> = ({ onNavigate }) => {
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard!");
+      showSuccessToast("Link copied to clipboard!");
     }
   };
 
@@ -191,9 +199,8 @@ const MarketplaceGrid: React.FC<MarketplaceGridProps> = ({ onNavigate }) => {
   };
 
   const handleSellSuccess = (post: Post, price: string) => {
-    toast.success(
-      `🎉 NFT #${post.tokenId} listed for sale at ${price} ETH! 💰`,
-      { duration: 4000 }
+    showSuccessToast(
+      `🎉 NFT #${post.tokenId} listed for sale at ${price} ETH! 💰`
     );
     // Refresh posts to update the marketplace
     fetchMarketplacePosts();
@@ -201,15 +208,19 @@ const MarketplaceGrid: React.FC<MarketplaceGridProps> = ({ onNavigate }) => {
 
   const handleCancelSell = async (post: Post) => {
     if (!walletClient) {
-      toast.error("Please connect your wallet to cancel listing");
+      showErrorToast(
+        "Wallet not connected",
+        "Please connect your wallet to cancel listing"
+      );
       return;
     }
 
+    let loadingToast: string | number | undefined;
     try {
-      toast.loading("Canceling listing...");
+      loadingToast = showLoadingToast("Canceling listing...");
       await cancelSell(walletClient, post.tokenId);
-      toast.dismiss();
-      toast.success(`🎉 Listing canceled for NFT #${post.tokenId}!`);
+      if (loadingToast) dismissToast(loadingToast);
+      showSuccessToast(`🎉 Listing canceled for NFT #${post.tokenId}!`);
 
       // Update the post locally immediately for better UX
       setPosts((prevPosts) =>
@@ -222,8 +233,8 @@ const MarketplaceGrid: React.FC<MarketplaceGridProps> = ({ onNavigate }) => {
       setTimeout(() => fetchMarketplacePosts(), 1000);
     } catch (error) {
       console.error("Error canceling listing:", error);
-      toast.dismiss();
-      toast.error("Failed to cancel listing. Please try again.");
+      if (loadingToast) dismissToast(loadingToast);
+      showErrorToast("Failed to cancel listing", error);
     }
   };
 
@@ -245,9 +256,9 @@ const MarketplaceGrid: React.FC<MarketplaceGridProps> = ({ onNavigate }) => {
     // Navigate to chat page
     if (onNavigate) {
       onNavigate("Chats");
-      toast.success(`Opening chat with ${ownerName}`);
+      showSuccessToast(`Opening chat with ${ownerName}`);
     } else {
-      toast.success(`Chat info saved. Navigate to Chats to continue.`);
+      showSuccessToast(`Chat info saved. Navigate to Chats to continue.`);
     }
   };
 
