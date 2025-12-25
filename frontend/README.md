@@ -70,6 +70,27 @@ npm run dev
 
 This will start the application on `http://localhost:5173`.
 
+### Local Development Workflow
+
+To link the frontend with a locally running blockchain (e.g., Anvil):
+
+1. **Deploy Contracts Locally:**
+   Navigate to the `smartcontract` directory and deploy your contracts to your local node.
+
+   ```sh
+   cd smartcontract
+   forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast
+   ```
+
+2. **Update Frontend Contract Info:**
+   The frontend uses the contract ABIs and addresses stored in `frontend/src/contracts/deployedContracts.ts`. When you deploy locally, ensure this file is updated with the local contract address.
+
+3. **Update Environment Variables:**
+   Set `VITE_CONTRACT_ADDRESS` in your `.env.local` to the address of your locally deployed contract.
+
+4. **Connect Wallet to Local Network:**
+   Configure your wallet (e.g., MetaMask) to connect to `http://localhost:8545` (Chain ID 31337 for Anvil).
+
 ## Building for Production
 
 To create a production build, run:
@@ -78,7 +99,7 @@ To create a production build, run:
 npm run build
 ```
 
-This will create a `dist` directory with the production-ready files.
+This will create a `dist` directory with the production-ready files. Ensure all environment variables are correctly set in your CI/CD environment.
 
 ## Network
 
