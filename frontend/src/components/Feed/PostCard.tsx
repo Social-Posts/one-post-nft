@@ -264,8 +264,8 @@ const PostCard: React.FC<PostCardProps> = ({
               />
             </div>
           ) : isLoadingMetadata ? (
-            <div className="w-full h-48 bg-muted animate-pulse rounded-lg flex items-center justify-center">
-              <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
+            <div className="w-full h-48 bg-muted animate-pulse rounded-lg flex items-center justify-center border border-border/50">
+              <ImageIcon className="w-8 h-8 text-muted-foreground/30 animate-bounce" />
             </div>
           ) : null}
         </div>
