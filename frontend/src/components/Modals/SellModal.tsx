@@ -15,7 +15,12 @@ import { Gem, DollarSign, Tag, Loader2 } from "lucide-react";
 import { Post } from "@/context/AppContext";
 import { useAccount, useWalletClient } from "wagmi";
 import { proposeSell } from "@/services/contract";
-import { toast } from "sonner";
+import {
+  showErrorToast,
+  showSuccessToast,
+  showLoadingToast,
+  dismissToast,
+} from "@/utils/toastUtils";
 
 interface SellModalProps {
   isOpen: boolean;
@@ -40,13 +45,14 @@ const SellModal: React.FC<SellModalProps> = ({
 
     const priceValue = parseFloat(price);
     if (isNaN(priceValue) || priceValue <= 0) {
-      toast.error("Please enter a valid price");
+      showErrorToast("Invalid price", "Please enter a valid price");
       return;
     }
 
+    let loadingToast: string | number | undefined;
     try {
       setIsLoading(true);
-      toast.loading("Preparing sell transaction...");
+      loadingToast = showLoadingToast("Preparing sell transaction...");
 
       // Convert ETH to smallest unit (multiply by 10^18) and ensure it's a proper integer
       const priceInEthUnits = BigInt(Math.floor(priceValue * 1e18));
@@ -57,28 +63,17 @@ const SellModal: React.FC<SellModalProps> = ({
         Number(priceInEthUnits)
       );
 
-      toast.dismiss();
-      toast.success("🎉 NFT listed for sale successfully!");
+      if (loadingToast) dismissToast(loadingToast);
+      showSuccessToast("🎉 NFT listed for sale successfully!");
 
       onSellSuccess?.(post, price);
       onClose();
       setPrice("");
     } catch (error) {
       console.error("Error listing NFT for sale:", error);
-      toast.dismiss();
+      if (loadingToast) dismissToast(loadingToast);
 
-      // More specific error handling
-      if (error instanceof Error) {
-        if (error.message.includes("User rejected")) {
-          toast.error("Transaction was rejected by user");
-        } else if (error.message.includes("insufficient")) {
-          toast.error("Insufficient funds for transaction");
-        } else {
-          toast.error(`Failed to list NFT: ${error.message}`);
-        }
-      } else {
-        toast.error("Failed to list NFT for sale. Please try again.");
-      }
+      showErrorToast("Failed to list NFT", error);
     } finally {
       setIsLoading(false);
     }

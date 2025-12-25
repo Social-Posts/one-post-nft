@@ -1,16 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { RefreshCw, Loader2, Heart, Share2 } from 'lucide-react';
-import { toast } from '@/components/ui/sonner';
-import { useAccount, useWalletClient } from 'wagmi';
-import { cancelSell, buyPost, mintMockTokens } from '@/services/contract';
-import PostCard from '@/components/Feed/PostCard';
-import SellModal from '@/components/Modals/SellModal';
-import type { Post } from '@/context/AppContext';
-import PostSample from '@/pages/PostSample';
-import { LikesService } from '@/services/chatService';
-import deployedContracts from '../../../contracts/deployedContracts';
+import React, { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, Loader2, Heart, Share2 } from "lucide-react";
+import {
+  showErrorToast,
+  showSuccessToast,
+  showLoadingToast,
+  dismissToast,
+} from "@/utils/toastUtils";
+import { useAccount, useWalletClient } from "wagmi";
+import { cancelSell, buyPost, mintMockTokens } from "@/services/contract";
+import PostCard from "@/components/Feed/PostCard";
+import SellModal from "@/components/Modals/SellModal";
+import type { Post } from "@/context/AppContext";
+import PostSample from "@/pages/PostSample";
+import { LikesService } from "@/services/chatService";
+import deployedContracts from "../../../contracts/deployedContracts";
 
 interface CommunityFeedProps {
   isLoading: boolean;
@@ -21,14 +26,24 @@ interface CommunityFeedProps {
   onCheckNewPosts?: () => void;
 }
 
-const MOCK_BASE_CONTRACT_ADDRESS = deployedContracts.base.MockBASE.address as `0x${string}`;
+const MOCK_BASE_CONTRACT_ADDRESS = deployedContracts.base.MockBASE
+  .address as `0x${string}`;
 
-const CommunityFeed: React.FC<CommunityFeedProps> = ({ isLoading, posts, onRefresh, onNavigate, hasNewPosts, onCheckNewPosts }) => {
+const CommunityFeed: React.FC<CommunityFeedProps> = ({
+  isLoading,
+  posts,
+  onRefresh,
+  onNavigate,
+  hasNewPosts,
+  onCheckNewPosts,
+}) => {
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   const [likingPost, setLikingPost] = useState<string | null>(null);
   const [sellModalOpen, setSellModalOpen] = useState(false);
-  const [selectedPostForSell, setSelectedPostForSell] = useState<Post | null>(null);
+  const [selectedPostForSell, setSelectedPostForSell] = useState<Post | null>(
+    null
+  );
   const { address, isConnected } = useAccount(); // For Base transactions
   const { data: walletClient } = useWalletClient();
 
@@ -40,8 +55,8 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ isLoading, posts, onRefre
       try {
         const likePromises = posts.map(async (post) => {
           const [isLiked, count] = await Promise.all([
-            LikesService.hasUserLiked(address, 'post', post.tokenId),
-            LikesService.getLikeCount('post', post.tokenId)
+            LikesService.hasUserLiked(address, "post", post.tokenId),
+            LikesService.getLikeCount("post", post.tokenId),
           ]);
           return { tokenId: post.tokenId, isLiked, count };
         });
@@ -59,7 +74,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ isLoading, posts, onRefre
         setLikedPosts(newLikedPosts);
         setLikeCounts(newLikeCounts);
       } catch (error) {
-        console.error('Error loading like data:', error);
+        console.error("Error loading like data:", error);
       }
     };
 
@@ -82,7 +97,10 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ isLoading, posts, onRefre
 
   const handleLike = async (post: Post) => {
     if (!address) {
-      toast.error('Please connect your wallet to like posts');
+      showErrorToast(
+        "Wallet not connected",
+        "Please connect your wallet to like posts"
+      );
       return;
     }
     if (likingPost === post.tokenId) return;
@@ -91,7 +109,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ isLoading, posts, onRefre
     try {
       const result = await LikesService.toggleLike(
         address,
-        'post',
+        "post",
         post.tokenId,
         post.author // Pass post owner address for notifications
       );
@@ -102,18 +120,18 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ isLoading, posts, onRefre
 
       if (result.liked) {
         newLikedPosts.add(post.tokenId);
-        toast.success(`❤️ You liked NFT #${post.tokenId}!`, { duration: 2000 });
+        showSuccessToast(`❤️ You liked NFT #${post.tokenId}!`);
       } else {
         newLikedPosts.delete(post.tokenId);
-        toast.success(`💔 Unliked NFT #${post.tokenId}`, { duration: 2000 });
+        showSuccessToast(`💔 Unliked NFT #${post.tokenId}`);
       }
 
       newLikeCounts[post.tokenId] = result.count;
       setLikedPosts(newLikedPosts);
       setLikeCounts(newLikeCounts);
     } catch (error) {
-      console.error('Error toggling like:', error);
-      toast.error('Failed to update like');
+      console.error("Error toggling like:", error);
+      showErrorToast("Failed to update like", error);
     } finally {
       setLikingPost(null);
     }
@@ -122,17 +140,15 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ isLoading, posts, onRefre
   const handleShare = (post: Post) => {
     if (navigator.share) {
       navigator.share({
-        title: 'OnePostNft NFT',
+        title: "OnePostNft NFT",
         text: post.content,
         url: window.location.href,
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      toast.success('📋 Link copied to clipboard!');
+      showSuccessToast("📋 Link copied to clipboard!");
     }
   };
-
-
 
   const handleSell = (post: Post) => {
     setSelectedPostForSell(post);
@@ -140,92 +156,90 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ isLoading, posts, onRefre
   };
 
   const handleSellSuccess = (post: Post, price: string) => {
-    toast.success(`🎉 NFT #${post.tokenId} listed for ${price} ETH!`);
+    showSuccessToast(`🎉 NFT #${post.tokenId} listed for ${price} ETH!`);
     // Refresh posts to update the feed
     onRefresh();
   };
 
   const handleBuy = async (post: Post) => {
-    if (!isConnected) {
-      toast.error('🔐 Please connect your wallet to buy NFT');
+    if (!address) {
+      showErrorToast(
+        "Wallet not connected",
+        "🔐 Please connect your wallet to buy NFT"
+      );
       return;
     }
 
     if (!walletClient) {
-      toast.error('🔗 Please connect an Ethereum wallet (MetaMask or Coinbase) to buy NFTs.');
+      showErrorToast(
+        "Wallet client not ready",
+        "🔗 Please connect an Ethereum wallet (MetaMask or Coinbase) to buy NFTs."
+      );
       return;
     }
 
     let loadingToast: string | number | undefined;
 
     try {
-      loadingToast = toast.loading('💳 Processing purchase...');
+      loadingToast = showLoadingToast("💳 Processing purchase...");
       await buyPost(walletClient, post.tokenId, MOCK_BASE_CONTRACT_ADDRESS);
 
       // Dismiss loading toast before showing success
       if (loadingToast) {
-        toast.dismiss(loadingToast);
+        dismissToast(loadingToast);
       }
 
-      toast.success(`🎉 Successfully bought NFT #${post.tokenId}! 🚀`);
+      showSuccessToast(`🎉 Successfully bought NFT #${post.tokenId}! 🚀`);
 
       // Refresh posts to update the feed
       onRefresh();
     } catch (error) {
-      console.error('Error buying NFT:', error);
+      console.error("Error buying NFT:", error);
 
       // Dismiss loading toast before showing error
       if (loadingToast) {
-        toast.dismiss(loadingToast);
+        dismissToast(loadingToast);
       }
 
-      const errorMessage = error instanceof Error ? error.message : 'Failed to buy NFT';
-
-      // Check for specific error types
-      if (errorMessage.includes('Insufficient ETH balance') || errorMessage.includes('insufficient') || errorMessage.includes('balance')) {
-        toast.error(`❌ Insufficient ETH balance to buy NFT #${post.tokenId}`);
-      } else if (errorMessage.includes('rejected') || errorMessage.includes('denied')) {
-        toast.error('❌ Transaction rejected by user');
-      } else if (errorMessage.includes('network') || errorMessage.includes('connection')) {
-        toast.error('❌ Network error. Please try again');
-      } else {
-        toast.error(`❌ Failed to buy NFT #${post.tokenId}: ${errorMessage}`);
-      }
+      showErrorToast(`❌ Failed to buy NFT #${post.tokenId}`, error);
     }
   };
 
   const handleCancelSell = async (post: Post) => {
     if (!walletClient) {
-      toast.error('🔐 Please connect your wallet to cancel listing');
+      showErrorToast(
+        "Wallet not connected",
+        "🔐 Please connect your wallet to cancel listing"
+      );
       return;
     }
 
     let loadingToast: string | number | undefined;
 
     try {
-      loadingToast = toast.loading('🔄 Canceling listing...');
+      loadingToast = showLoadingToast("🔄 Canceling listing...");
       // Note: cancelSell typically takes a proposal ID, but we'll use tokenId for now
       // This might need adjustment based on your contract implementation
       await cancelSell(walletClient, post.tokenId);
 
       // Dismiss loading toast before showing success
       if (loadingToast) {
-        toast.dismiss(loadingToast);
+        dismissToast(loadingToast);
       }
 
-      toast.success(`✅ Listing canceled for NFT #${post.tokenId}!`);
+      showSuccessToast(`✅ Listing canceled for NFT #${post.tokenId}!`);
 
       // Refresh posts to update the feed
       onRefresh();
     } catch (error) {
-      console.error('Error canceling listing:', error);
+      console.error("Error canceling listing:", error);
 
       // Dismiss loading toast before showing error
       if (loadingToast) {
-        toast.dismiss(loadingToast);
+        dismissToast(loadingToast);
       }
 
-      toast.error('❌ Failed to cancel listing. Please try again.');
+      showErrorToast("❌ Failed to cancel listing", error);
     }
   };
 
@@ -235,42 +249,48 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ isLoading, posts, onRefre
     const ownerName = `${ownerAddress.slice(0, 6)}...${ownerAddress.slice(-4)}`;
 
     // Store chat info in localStorage for the chat page to pick up
-    localStorage.setItem('chatTarget', JSON.stringify({
-      address: ownerAddress,
-      name: ownerName,
-      postId: post.tokenId
-    }));
+    localStorage.setItem(
+      "chatTarget",
+      JSON.stringify({
+        address: ownerAddress,
+        name: ownerName,
+        postId: post.tokenId,
+      })
+    );
 
     // Navigate to chat page
     if (onNavigate) {
-      onNavigate('Chats');
-      toast.success(`Opening chat with ${ownerName}`);
+      onNavigate("Chats");
+      showSuccessToast(`Opening chat with ${ownerName}`);
     } else {
-      toast.success(`Chat info saved. Navigate to Chats to continue.`);
+      showSuccessToast(`Chat info saved. Navigate to Chats to continue.`);
     }
   };
 
   const handleMintMockTokens = async () => {
     if (!walletClient) {
-      toast.error('Please connect your wallet to mint tokens');
+      showErrorToast(
+        "Wallet not connected",
+        "Please connect your wallet to mint tokens"
+      );
       return;
     }
 
     let loadingToast: string | number | undefined;
 
     try {
-      loadingToast = toast.loading('Minting mock tokens...');
+      loadingToast = showLoadingToast("Minting mock tokens...");
       await mintMockTokens(walletClient, 1000 * 10 ** 18);
       if (loadingToast) {
-        toast.dismiss(loadingToast);
+        dismissToast(loadingToast);
       }
-      toast.success('Successfully minted 1000 NFT Social tokens!');
+      showSuccessToast("Successfully minted 1000 NFT Social tokens!");
     } catch (error) {
-      console.error('Error minting mock tokens:', error);
+      console.error("Error minting mock tokens:", error);
       if (loadingToast) {
-        toast.dismiss(loadingToast);
+        dismissToast(loadingToast);
       }
-      toast.error('Failed to mint mock tokens');
+      showErrorToast("Failed to mint mock tokens", error);
     }
   };
 
@@ -303,7 +323,9 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ isLoading, posts, onRefre
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-primary">New posts available</span>
+                <span className="text-sm font-medium text-primary">
+                  New posts available
+                </span>
               </div>
               <Button
                 variant="outline"
@@ -320,7 +342,9 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ isLoading, posts, onRefre
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <span className="ml-3 text-muted-foreground">Loading posts from blockchain...</span>
+            <span className="ml-3 text-muted-foreground">
+              Loading posts from blockchain...
+            </span>
           </div>
         ) : posts.length === 0 ? (
           <div className="text-center py-12">
@@ -337,9 +361,9 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ isLoading, posts, onRefre
           </div>
         ) : (
           <div className="space-y-4">
-             
             {posts.map((post) => {
-              const isOwner = address && post.author.toLowerCase() === address.toLowerCase();
+              const isOwner =
+                address && post.author.toLowerCase() === address.toLowerCase();
               return (
                 <PostCard
                   key={post.tokenId}
