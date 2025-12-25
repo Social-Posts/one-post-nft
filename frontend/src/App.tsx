@@ -3,7 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
-import { toast } from "sonner";
+import { showSuccessToast } from "@/utils/toastUtils";
 import { WagmiProvider } from "wagmi";
 import { config } from "./wagmi";
 import Index from "./pages/Index";
@@ -20,7 +20,7 @@ const App = () => {
       navigator.serviceWorker
         .register("/sw.js")
         .then((_registration) => {
-          toast.success("App ready for you!");
+          showSuccessToast("App ready for you!");
         })
         .catch((error) => {
           console.error("Service Worker registration failed:", error);
@@ -47,11 +47,13 @@ const App = () => {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={lightTheme({
-          accentColor: '#00BFFF',
-          accentColorForeground: 'white',
-          borderRadius: 'medium',
-        })}>
+        <RainbowKitProvider
+          theme={lightTheme({
+            accentColor: "#00BFFF",
+            accentColorForeground: "white",
+            borderRadius: "medium",
+          })}
+        >
           {/* <ScaffoldStarkAppWithProviders> */}
           <TooltipProvider>
             <Sonner />
