@@ -1,17 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Clock, Sparkles, Heart, Tag, Image as ImageIcon, ShoppingCart, MessageCircle } from 'lucide-react';
-import { Post } from '@/context/AppContext';
-import { usePostSwipeActions } from '@/hooks/useSwipeGestures';
-import { getFromIPFS, PostMetadata } from '@/services/ipfs';
-import { useProtectedAction } from '@/context/GuestBrowsingContext';
-import { useAccount } from 'wagmi';
-import ImageZoomModal from '@/components/Modals/ImageZoomModal';
-import { formatTimeAgo } from '@/utils/timeUtils';
-import onePostNftLogo from '@/Images/onepostnft_image.png';
+import React, { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Clock,
+  Sparkles,
+  Heart,
+  Tag,
+  Image as ImageIcon,
+  ShoppingCart,
+  MessageCircle,
+} from "lucide-react";
+import { Post } from "@/context/AppContext";
+import { usePostSwipeActions } from "@/hooks/useSwipeGestures";
+import { getFromIPFS, PostMetadata } from "@/services/ipfs";
+import { useProtectedAction } from "@/context/GuestBrowsingContext";
+import { useAccount } from "wagmi";
+import ImageZoomModal from "@/components/Modals/ImageZoomModal";
+import { formatTimeAgo } from "@/utils/timeUtils";
+import onePostNftLogo from "@/Images/onepostnft_image.png";
 
+import { useInView } from "react-intersection-observer";
 
 interface PostCardProps {
   post: Post;
@@ -44,7 +53,7 @@ const PostCard: React.FC<PostCardProps> = ({
   showSellButton = false,
   showBuyButton = false,
   isOwner = false,
-  isForSale = false
+  isForSale = false,
 }) => {
   const [metadata, setMetadata] = useState<PostMetadata | null>(null);
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
@@ -53,10 +62,15 @@ const PostCard: React.FC<PostCardProps> = ({
   const { address } = useAccount();
   const { executeProtectedAction } = useProtectedAction();
 
+  const { ref, inView } = useInView({
+    triggerOnce: true,
+    rootMargin: "200px 0px",
+  });
+
   // Fetch IPFS metadata to get image and full content
   useEffect(() => {
     const fetchMetadata = async () => {
-      if (post.contentHash) {
+      if (post.contentHash && inView && !metadata) {
         setIsLoadingMetadata(true);
         try {
           const data = await getFromIPFS<PostMetadata>(post.contentHash);
@@ -68,27 +82,24 @@ const PostCard: React.FC<PostCardProps> = ({
         } finally {
           setIsLoadingMetadata(false);
         }
-      } else {
-        setMetadata(null);
       }
     };
 
     fetchMetadata();
-  }, [post.contentHash]);
-
-
+  }, [post.contentHash, inView, metadata]);
 
   const truncateAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
   // Determine if current user is the owner (check current owner, not author)
-  const isPostOwner = address && post.currentOwner.toLowerCase() === address.toLowerCase();
+  const isPostOwner =
+    address && post.currentOwner.toLowerCase() === address.toLowerCase();
 
   const handleBuyClick = () => {
-    executeProtectedAction('buy_nft', () => {
+    executeProtectedAction("buy_nft", () => {
       // Open buy modal with payment method selection
-      const event = new CustomEvent('openBuyModal', { detail: { post } });
+      const event = new CustomEvent("openBuyModal", { detail: { post } });
       window.dispatchEvent(event);
     });
   };
@@ -121,18 +132,22 @@ const PostCard: React.FC<PostCardProps> = ({
     // Prevent common copy/save shortcuts
     if (
       (e.ctrlKey || e.metaKey) &&
-      (e.key === 'c' || e.key === 'a' || e.key === 's' || e.key === 'p' || e.key === 'v')
+      (e.key === "c" ||
+        e.key === "a" ||
+        e.key === "s" ||
+        e.key === "p" ||
+        e.key === "v")
     ) {
       e.preventDefault();
       return false;
     }
     // Prevent F12 (Developer Tools)
-    if (e.key === 'F12') {
+    if (e.key === "F12") {
       e.preventDefault();
       return false;
     }
     // Prevent Ctrl+Shift+I (Developer Tools)
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "I") {
       e.preventDefault();
       return false;
     }
@@ -142,13 +157,17 @@ const PostCard: React.FC<PostCardProps> = ({
   const swipeHandlers = usePostSwipeActions(
     post.tokenId,
     () => onLike?.(post),
-    () => isPostOwner ? onSell?.(post) : onShare?.(post),
+    () => (isPostOwner ? onSell?.(post) : onShare?.(post))
   );
 
   const getPostStatus = () => {
     // If post is for sale, show for sale status
     if (isForSale) {
-      return { status: 'for-sale', color: 'bg-green-500/20 text-green-400', label: 'For Sale' };
+      return {
+        status: "for-sale",
+        color: "bg-green-500/20 text-green-400",
+        label: "For Sale",
+      };
     }
 
     // If post was sold, show sold status (we'll need to add this logic later)
@@ -158,17 +177,26 @@ const PostCard: React.FC<PostCardProps> = ({
 
     const hoursSincePost = (Date.now() - post.timestamp) / (1000 * 60 * 60);
     if (hoursSincePost < 24) {
-      return { status: 'today', color: 'bg-blue-500/20 text-blue-400', label: "Today's Post" };
+      return {
+        status: "today",
+        color: "bg-blue-500/20 text-blue-400",
+        label: "Today's Post",
+      };
     }
 
     // Default status for posts that are not for sale
-    return { status: 'available', color: 'bg-purple-500/20 text-purple-400', label: 'Available' };
+    return {
+      status: "available",
+      color: "bg-purple-500/20 text-purple-400",
+      label: "Available",
+    };
   };
 
   const postStatus = getPostStatus();
 
   return (
     <Card
+      ref={ref}
       className="p-4 bg-card border-border hover:border-primary/50 transition-all duration-300 group animate-fade-in hover:animate-morph touch-manipulation nft-protected"
       onContextMenu={handleContextMenu}
       onKeyDown={handleKeyDown}
@@ -181,13 +209,15 @@ const PostCard: React.FC<PostCardProps> = ({
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-transparent flex items-center justify-center animate-pulse-glow">
               <img
-            src={onePostNftLogo}
-            alt="OnePostNft Logo"
-            className="relative w-32 h-32 md:w-40 md:h-40 object-contain rounded-2xl shadow-2xl animate-bounce-slow"
-          />
+                src={onePostNftLogo}
+                alt="OnePostNft Logo"
+                className="relative w-32 h-32 md:w-40 md:h-40 object-contain rounded-2xl shadow-2xl animate-bounce-slow"
+              />
             </div>
             <div>
-              <div className="text-sm font-medium text-foreground">{truncateAddress(post.currentOwner)}</div>
+              <div className="text-sm font-medium text-foreground">
+                {truncateAddress(post.currentOwner)}
+              </div>
               <div className="text-xs text-muted-foreground flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 {formatTimeAgo(new Date(post.timestamp))}
@@ -199,7 +229,7 @@ const PostCard: React.FC<PostCardProps> = ({
               )}
             </div>
           </div>
-          
+
           <Badge className={`${postStatus.color} border-0 text-nowrap`}>
             {postStatus.label}
           </Badge>
@@ -209,38 +239,35 @@ const PostCard: React.FC<PostCardProps> = ({
         <div className="py-2 space-y-3">
           {/* Text Content */}
           {(metadata?.content || post.content) &&
-           !(metadata?.content === '' && metadata?.image) &&
-           !post.content.includes('Loading content from IPFS') && (
-            <p className="text-sm leading-relaxed whitespace-pre-wrap nft-protected">
-              {metadata?.content || post.content}
-            </p>
-          )}
+            !(metadata?.content === "" && metadata?.image) &&
+            !post.content.includes("Loading content from IPFS") && (
+              <p className="text-sm leading-relaxed whitespace-pre-wrap nft-protected">
+                {metadata?.content || post.content}
+              </p>
+            )}
 
           {/* Image Content */}
-          {metadata?.image && (
-            <div className="relative rounded-lg overflow-hidden bg-muted nft-protected cursor-pointer">
+          {metadata?.image ? (
+            <div className="relative rounded-lg overflow-hidden bg-muted nft-protected cursor-pointer min-h-[100px] flex items-center justify-center">
               <img
                 src={metadata.image}
                 alt="Post image"
+                loading="lazy"
                 className="w-full max-h-96 object-cover transition-transform duration-300 hover:scale-105 nft-protected"
                 onClick={handleImageClick}
                 onError={(e) => {
-                  console.error('Error loading image:', e);
-                  (e.target as HTMLImageElement).style.display = 'none';
+                  console.error("Error loading image:", e);
+                  (e.target as HTMLImageElement).style.display = "none";
                 }}
                 onDragStart={handleDragStart}
                 onContextMenu={handleContextMenu}
               />
             </div>
-          )}
-
-          {/* Loading state for metadata */}
-          {isLoadingMetadata && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <ImageIcon className="w-4 h-4 animate-pulse" />
-              <span>Loading media...</span>
+          ) : isLoadingMetadata ? (
+            <div className="w-full h-48 bg-muted animate-pulse rounded-lg flex items-center justify-center">
+              <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* NFT Indicator */}
@@ -262,13 +289,17 @@ const PostCard: React.FC<PostCardProps> = ({
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => executeProtectedAction('like_post', () => onLike?.(post))}
+                onClick={() =>
+                  executeProtectedAction("like_post", () => onLike?.(post))
+                }
                 disabled={isLiking}
                 className={`flex items-center gap-1 h-8 px-2 hover:bg-primary/10 transition-colors ${
-                  isLiked ? 'text-primary' : 'text-muted-foreground hover:text-primary'
+                  isLiked
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-primary"
                 }`}
               >
-                <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                <Heart className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`} />
                 <span className="text-sm font-medium">{likeCount}</span>
               </Button>
 
@@ -277,11 +308,15 @@ const PostCard: React.FC<PostCardProps> = ({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => executeProtectedAction('sell_nft', () => onSell?.(post))}
+                  onClick={() =>
+                    executeProtectedAction("sell_nft", () => onSell?.(post))
+                  }
                   className="flex items-center gap-1 h-8 px-2 text-muted-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors"
                 >
                   <Tag className="w-4 h-4" />
-                  <span className="text-sm font-medium hidden sm:inline">Sell</span>
+                  <span className="text-sm font-medium hidden sm:inline">
+                    Sell
+                  </span>
                 </Button>
               ) : isPostOwner && isForSale ? (
                 <Button
@@ -292,7 +327,9 @@ const PostCard: React.FC<PostCardProps> = ({
                   title="Cancel listing"
                 >
                   <Tag className="w-4 h-4" />
-                  <span className="text-sm font-medium hidden sm:inline">Cancel</span>
+                  <span className="text-sm font-medium hidden sm:inline">
+                    Cancel
+                  </span>
                 </Button>
               ) : !isPostOwner && isForSale ? (
                 <div className="flex items-center gap-1 min-w-0">
@@ -303,7 +340,9 @@ const PostCard: React.FC<PostCardProps> = ({
                     className="flex items-center gap-1 h-8 px-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors shrink-0"
                   >
                     <ShoppingCart className="w-4 h-4" />
-                    <span className="text-sm font-medium hidden lg:inline">Buy</span>
+                    <span className="text-sm font-medium hidden lg:inline">
+                      Buy
+                    </span>
                   </Button>
                   {showChatOption && (
                     <Button
@@ -314,7 +353,9 @@ const PostCard: React.FC<PostCardProps> = ({
                       title="Chat with owner"
                     >
                       <MessageCircle className="w-4 h-4" />
-                      <span className="text-sm font-medium hidden xl:inline">Chat</span>
+                      <span className="text-sm font-medium hidden xl:inline">
+                        Chat
+                      </span>
                     </Button>
                   )}
                 </div>
@@ -327,12 +368,12 @@ const PostCard: React.FC<PostCardProps> = ({
                   title="Chat with owner"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  <span className="text-sm font-medium hidden lg:inline">Chat</span>
+                  <span className="text-sm font-medium hidden lg:inline">
+                    Chat
+                  </span>
                 </Button>
               ) : null}
             </div>
-
-            
           </div>
         </div>
 
@@ -352,7 +393,7 @@ const PostCard: React.FC<PostCardProps> = ({
           title={`NFT #${post.tokenId} - ${truncateAddress(post.author)}`}
         />
       )}
-     </Card>
+    </Card>
   );
 };
 
