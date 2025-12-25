@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import React, { useState, useEffect, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Bell,
   Heart,
@@ -13,20 +13,19 @@ import {
   Check,
   CheckCheck,
   Trash2,
-  Filter,
   RefreshCw,
-  Loader2
-} from 'lucide-react';
-import { useAccount } from 'wagmi';
-import { showErrorToast, showSuccessToast } from '@/utils/toastUtils';
-import { NotificationService } from '@/services/notificationService';
-import { formatTimeAgo } from '@/utils/timeUtils';
-import ConnectWalletButton from '@/components/Wallet/ConnectWalletButton';
+  Loader2,
+} from "lucide-react";
+import { useAccount } from "wagmi";
+import { showErrorToast, showSuccessToast } from "@/utils/toastUtils";
+import { NotificationService } from "@/services/notificationService";
+import { formatTimeAgo } from "@/utils/timeUtils";
+import ConnectWalletButton from "@/components/Wallet/ConnectWalletButton";
 
 interface Notification {
   id: string;
   user_address: string;
-  type: 'like' | 'buy' | 'sell' | 'chat' | 'post_created' | 'nft_listed';
+  type: "like" | "buy" | "sell" | "chat" | "post_created" | "nft_listed";
   title: string;
   message: string;
   from_address?: string;
@@ -42,11 +41,14 @@ interface NotificationsPageProps {
   onNotificationCountChange?: () => void;
 }
 
-const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNotificationCountChange }) => {
+const NotificationsPage: React.FC<NotificationsPageProps> = ({
+  onNavigate,
+  onNotificationCountChange,
+}) => {
   const { address } = useAccount();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
 
   // Load notifications
   const loadNotifications = useCallback(async () => {
@@ -55,10 +57,10 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
     try {
       setLoading(true);
       const data = await NotificationService.getUserNotifications(address);
-      setNotifications(data);
+      setNotifications(data as Notification[]);
     } catch (error) {
-      console.error('Error loading notifications:', error);
-      showErrorToast('Failed to load notifications', error);
+      console.error("Error loading notifications:", error);
+      showErrorToast("Failed to load notifications", error);
     } finally {
       setLoading(false);
     }
@@ -72,13 +74,13 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
   const markAsRead = async (notificationId: string) => {
     try {
       await NotificationService.markAsRead(notificationId);
-      setNotifications(prev =>
-        prev.map(notif =>
+      setNotifications((prev) =>
+        prev.map((notif) =>
           notif.id === notificationId ? { ...notif, is_read: true } : notif
         )
       );
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error("Error marking notification as read:", error);
     }
   };
 
@@ -86,14 +88,15 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
   const markAllAsRead = async () => {
     if (!address) return;
 
+    try {
       await NotificationService.markAllAsRead(address);
-      setNotifications(prev =>
-        prev.map(notif => ({ ...notif, is_read: true }))
+      setNotifications((prev) =>
+        prev.map((notif) => ({ ...notif, is_read: true }))
       );
-      showSuccessToast('All notifications marked as read');
+      showSuccessToast("All notifications marked as read");
     } catch (error) {
-      console.error('Error marking all as read:', error);
-      showErrorToast('Failed to mark all as read', error);
+      console.error("Error marking all as read:", error);
+      showErrorToast("Failed to mark all as read", error);
     }
   };
 
@@ -101,34 +104,34 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
   const deleteNotification = async (notificationId: string) => {
     try {
       await NotificationService.deleteNotification(notificationId);
-      setNotifications(prev =>
-        prev.filter(notif => notif.id !== notificationId)
+      setNotifications((prev) =>
+        prev.filter((notif) => notif.id !== notificationId)
       );
-      showSuccessToast('Notification deleted');
+      showSuccessToast("Notification deleted");
 
       // Trigger count update in navigation
       if (onNotificationCountChange) {
         onNotificationCountChange();
       }
     } catch (error) {
-      console.error('Error deleting notification:', error);
-      showErrorToast('Failed to delete notification', error);
+      console.error("Error deleting notification:", error);
+      showErrorToast("Failed to delete notification", error);
     }
   };
 
   // Get notification icon
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'like':
+      case "like":
         return <Heart className="w-5 h-5 text-red-500" />;
-      case 'buy':
-      case 'sell':
+      case "buy":
+      case "sell":
         return <ShoppingCart className="w-5 h-5 text-green-500" />;
-      case 'chat':
+      case "chat":
         return <MessageCircle className="w-5 h-5 text-blue-500" />;
-      case 'post_created':
+      case "post_created":
         return <FileText className="w-5 h-5 text-purple-500" />;
-      case 'nft_listed':
+      case "nft_listed":
         return <Tag className="w-5 h-5 text-orange-500" />;
       default:
         return <Bell className="w-5 h-5 text-gray-500" />;
@@ -144,17 +147,17 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
 
     // Navigate based on notification type
     switch (notification.type) {
-      case 'like':
-      case 'post_created':
-        onNavigate('feed');
+      case "like":
+      case "post_created":
+        onNavigate("feed");
         break;
-      case 'buy':
-      case 'sell':
-      case 'nft_listed':
-        onNavigate('marketplace');
+      case "buy":
+      case "sell":
+      case "nft_listed":
+        onNavigate("marketplace");
         break;
-      case 'chat':
-        onNavigate('chats');
+      case "chat":
+        onNavigate("chats");
         break;
       default:
         break;
@@ -162,18 +165,18 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
   };
 
   // Filter notifications
-  const filteredNotifications = notifications.filter(notif => {
+  const filteredNotifications = notifications.filter((notif) => {
     switch (filter) {
-      case 'unread':
+      case "unread":
         return !notif.is_read;
-      case 'read':
+      case "read":
         return notif.is_read;
       default:
         return true;
     }
   });
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   if (!address) {
     return (
@@ -205,7 +208,7 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
                 </Badge>
               )}
             </div>
-            
+
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -220,13 +223,9 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
                 )}
                 Refresh
               </Button>
-              
+
               {unreadCount > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={markAllAsRead}
-                >
+                <Button variant="outline" size="sm" onClick={markAllAsRead}>
                   <CheckCheck className="w-4 h-4 mr-2" />
                   Mark All Read
                 </Button>
@@ -237,23 +236,23 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
           {/* Filter Tabs */}
           <div className="flex gap-2 mt-4 flex-col md:flex-row">
             <Button
-              variant={filter === 'all' ? 'default' : 'outline'}
+              variant={filter === "all" ? "default" : "outline"}
               size="sm"
-              onClick={() => setFilter('all')}
+              onClick={() => setFilter("all")}
             >
               All ({notifications.length})
             </Button>
             <Button
-              variant={filter === 'unread' ? 'default' : 'outline'}
+              variant={filter === "unread" ? "default" : "outline"}
               size="sm"
-              onClick={() => setFilter('unread')}
+              onClick={() => setFilter("unread")}
             >
               Unread ({unreadCount})
             </Button>
             <Button
-              variant={filter === 'read' ? 'default' : 'outline'}
+              variant={filter === "read" ? "default" : "outline"}
               size="sm"
-              onClick={() => setFilter('read')}
+              onClick={() => setFilter("read")}
             >
               Read ({notifications.length - unreadCount})
             </Button>
@@ -264,22 +263,26 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <span className="ml-3 text-muted-foreground">Loading notifications...</span>
+              <span className="ml-3 text-muted-foreground">
+                Loading notifications...
+              </span>
             </div>
           ) : filteredNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <Bell className="w-16 h-16 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                {filter === 'all' ? 'No Notifications' : 
-                 filter === 'unread' ? 'No Unread Notifications' : 'No Read Notifications'}
+                {filter === "all"
+                  ? "No Notifications"
+                  : filter === "unread"
+                  ? "No Unread Notifications"
+                  : "No Read Notifications"}
               </h3>
               <p className="text-muted-foreground text-center">
-                {filter === 'all' 
+                {filter === "all"
                   ? "You'll see notifications here when you receive likes, messages, or NFT activity."
-                  : filter === 'unread'
+                  : filter === "unread"
                   ? "All caught up! No unread notifications."
-                  : "No read notifications to show."
-                }
+                  : "No read notifications to show."}
               </p>
             </div>
           ) : (
@@ -289,18 +292,24 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
                   <div key={notification.id}>
                     <div
                       className={`flex items-start gap-4 p-4 hover:bg-muted/50 cursor-pointer transition-colors ${
-                        !notification.is_read ? 'bg-green-50/10 border-l-4 border-l-blue-500' : ''
+                        !notification.is_read
+                          ? "bg-green-50/10 border-l-4 border-l-blue-500"
+                          : ""
                       }`}
                       onClick={() => handleNotificationClick(notification)}
                     >
                       <div className="flex-shrink-0 mt-1">
                         {getNotificationIcon(notification.type)}
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
-                            <h4 className={`font-medium ${!notification.is_read ? 'font-semibold' : ''}`}>
+                            <h4
+                              className={`font-medium ${
+                                !notification.is_read ? "font-semibold" : ""
+                              }`}
+                            >
                               {notification.title}
                             </h4>
                             <p className="text-sm text-muted-foreground mt-1">
@@ -310,7 +319,7 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
                               {formatTimeAgo(notification.created_at)}
                             </p>
                           </div>
-                          
+
                           <div className="flex items-center gap-1">
                             {!notification.is_read && (
                               <Button
@@ -325,7 +334,7 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
                                 <Check className="w-4 h-4" />
                               </Button>
                             )}
-                            
+
                             <Button
                               variant="ghost"
                               size="sm"

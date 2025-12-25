@@ -3,7 +3,7 @@ import { base } from 'viem/chains';
 import { useWalletClient, WalletClient } from 'wagmi';
 import type { Post as AppPost } from '@/context/AppContext';
 import deployedContracts from '../../contracts/deployedContracts';
-import { toast } from 'sonner';
+
 
 // Get contract info from deployedContracts (mainnet)
 const CONTRACT_INFO = deployedContracts.base.OnePostNFT;
