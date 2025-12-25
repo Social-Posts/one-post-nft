@@ -1,23 +1,23 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import ConnectWalletButton from '@/components/Wallet/ConnectWalletButton';
+import React, { useState, useEffect, useCallback } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import ConnectWalletButton from "@/components/Wallet/ConnectWalletButton";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   MessageCircle,
   Search,
@@ -31,31 +31,35 @@ import {
   Copy,
   ShoppingCart,
   User,
-  ChevronDown
-} from 'lucide-react';
-import { useAccount } from 'wagmi';
-import { ChatService, type ChatUser, type Message } from '@/services/chatService';
-import { toast } from '@/components/ui/sonner';
-import EmojiPicker from 'emoji-picker-react';
-import { formatTimeAgo, useRealTimeTimestamp } from '@/utils/timeUtils';
-import type { Post } from '@/context/AppContext';
-import type { EmojiClickData } from 'emoji-picker-react';
+  ChevronDown,
+} from "lucide-react";
+import { useAccount } from "wagmi";
+import {
+  ChatService,
+  type ChatUser,
+  type Message,
+} from "@/services/chatService";
+import { showErrorToast, showSuccessToast } from "@/utils/toastUtils";
+import EmojiPicker from "emoji-picker-react";
+import { formatTimeAgo, useRealTimeTimestamp } from "@/utils/timeUtils";
+import type { Post } from "@/context/AppContext";
+import type { EmojiClickData } from "emoji-picker-react";
 
-import { getUserPosts } from '@/services/contract';
-import { getFromIPFS } from '@/services/ipfs';
+import { getUserPosts } from "@/services/contract";
+import { getFromIPFS } from "@/services/ipfs";
 
 // Safe timestamp formatter for messages
 const safeFormatTimeAgo = (timestamp: string | undefined) => {
-  if (!timestamp) return 'now';
+  if (!timestamp) return "now";
 
   try {
     // Handle different timestamp formats
     let date: Date;
 
-    if (timestamp === 'now') return 'now';
+    if (timestamp === "now") return "now";
 
     // Try parsing as ISO string first
-    if (timestamp.includes('T') || timestamp.includes('Z')) {
+    if (timestamp.includes("T") || timestamp.includes("Z")) {
       date = new Date(timestamp);
     } else {
       // Try parsing as timestamp number
@@ -69,13 +73,13 @@ const safeFormatTimeAgo = (timestamp: string | undefined) => {
 
     // Check if date is valid
     if (isNaN(date.getTime())) {
-      return 'now';
+      return "now";
     }
 
     return formatTimeAgo(date);
   } catch (error) {
-    console.error('Error formatting timestamp:', timestamp, error);
-    return 'now';
+    console.error("Error formatting timestamp:", timestamp, error);
+    return "now";
   }
 };
 
@@ -84,7 +88,10 @@ const ChatTimestamp: React.FC<{ timestamp: string }> = ({ timestamp }) => {
   const [displayTime, setDisplayTime] = React.useState(() => {
     try {
       // Check if it's already formatted (like "now" or "14:30")
-      if (timestamp === 'now' || (timestamp.includes(':') && timestamp.length < 10)) {
+      if (
+        timestamp === "now" ||
+        (timestamp.includes(":") && timestamp.length < 10)
+      ) {
         return timestamp;
       }
 
@@ -94,15 +101,18 @@ const ChatTimestamp: React.FC<{ timestamp: string }> = ({ timestamp }) => {
         return formatTimeAgo(date);
       }
 
-      return 'now';
+      return "now";
     } catch (error) {
-      return 'now';
+      return "now";
     }
   });
 
   React.useEffect(() => {
     // Only set up real-time updates for valid ISO timestamps
-    if (timestamp === 'now' || (timestamp.includes(':') && timestamp.length < 10)) {
+    if (
+      timestamp === "now" ||
+      (timestamp.includes(":") && timestamp.length < 10)
+    ) {
       return; // Already formatted, no need for updates
     }
 
@@ -124,7 +134,7 @@ const ChatTimestamp: React.FC<{ timestamp: string }> = ({ timestamp }) => {
 
       return () => clearInterval(interval);
     } catch (error) {
-      console.error('Error setting up chat timestamp updates:', error);
+      console.error("Error setting up chat timestamp updates:", error);
     }
   }, [timestamp]);
 
@@ -132,12 +142,18 @@ const ChatTimestamp: React.FC<{ timestamp: string }> = ({ timestamp }) => {
 };
 
 // Real-time timestamp component for messages (handles raw Supabase timestamps)
-const MessageTimestamp: React.FC<{ timestamp: string; className?: string }> = ({ timestamp, className }) => {
+const MessageTimestamp: React.FC<{ timestamp: string; className?: string }> = ({
+  timestamp,
+  className,
+}) => {
   // For messages, we get raw ISO timestamps from Supabase, so we can use real-time formatting
   const [displayTime, setDisplayTime] = React.useState(() => {
     try {
       // Check if it's already formatted (like "now" or "14:30")
-      if (timestamp === 'now' || timestamp.includes(':') && timestamp.length < 10) {
+      if (
+        timestamp === "now" ||
+        (timestamp.includes(":") && timestamp.length < 10)
+      ) {
         return timestamp;
       }
 
@@ -147,15 +163,18 @@ const MessageTimestamp: React.FC<{ timestamp: string; className?: string }> = ({
         return formatTimeAgo(date);
       }
 
-      return 'now';
+      return "now";
     } catch (error) {
-      return 'now';
+      return "now";
     }
   });
 
   React.useEffect(() => {
     // Only set up real-time updates for valid ISO timestamps
-    if (timestamp === 'now' || timestamp.includes(':') && timestamp.length < 10) {
+    if (
+      timestamp === "now" ||
+      (timestamp.includes(":") && timestamp.length < 10)
+    ) {
       return; // Already formatted, no need for updates
     }
 
@@ -177,7 +196,7 @@ const MessageTimestamp: React.FC<{ timestamp: string; className?: string }> = ({
 
       return () => clearInterval(interval);
     } catch (error) {
-      console.error('Error setting up timestamp updates:', error);
+      console.error("Error setting up timestamp updates:", error);
     }
   }, [timestamp]);
 
@@ -191,9 +210,11 @@ interface ChatsPageProps {
 const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
   const { address } = useAccount();
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
-  const [selectedChatAddress, setSelectedChatAddress] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [newMessage, setNewMessage] = useState('');
+  const [selectedChatAddress, setSelectedChatAddress] = useState<string | null>(
+    null
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [newMessage, setNewMessage] = useState("");
   const [chats, setChats] = useState<ChatUser[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -214,53 +235,39 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
       const userChats = await ChatService.getUserChats(address);
       setChats(userChats);
     } catch (error) {
-      console.error('Error loading chats:', error);
-      toast.error('Failed to load chats');
+      console.error("Error loading chats:", error);
+      showErrorToast("Failed to load chats", error);
     } finally {
       setLoading(false);
     }
   }, [address]);
 
   // Load messages for selected chat
-  const loadMessages = useCallback(async (chatAddress: string) => {
-    if (!address) return;
+  const loadMessages = useCallback(
+    async (chatAddress: string) => {
+      if (!address) return;
 
-    try {
-      const chatMessages = await ChatService.getMessagesBetweenUsers(address, chatAddress);
-      setMessages(chatMessages);
-    } catch (error) {
-      console.error('Error loading messages:', error);
-      toast.error('Failed to load messages');
-    }
-  }, [address]);
+      try {
+        const chatMessages = await ChatService.getMessagesBetweenUsers(
+          address,
+          chatAddress
+        );
+        setMessages(chatMessages);
+      } catch (error) {
+        console.error("Error loading messages:", error);
+        showErrorToast("Failed to load messages", error);
+      }
+    },
+    [address]
+  );
 
   // Handle chat selection
-  const handleChatSelect = useCallback(async (chatId: string, chatAddress?: string) => {
-    setSelectedChat(chatId);
-    if (chatAddress) {
-      setSelectedChatAddress(chatAddress);
-      loadMessages(chatAddress);
-
-      // Mark messages as read
-      if (address) {
-        try {
-          await ChatService.markMessagesAsRead(chatId, address);
-          // Reload chats to update unread counts
-          loadChats();
-          // Update chat count in navigation
-          if (onChatCountChange) {
-            onChatCountChange();
-          }
-        } catch (error) {
-          console.error('Error marking messages as read:', error);
-        }
-      }
-    } else {
-      // Find chat by ID if address not provided
-      const chat = chats.find(c => c.id === chatId);
-      if (chat) {
-        setSelectedChatAddress(chat.address);
-        loadMessages(chat.address);
+  const handleChatSelect = useCallback(
+    async (chatId: string, chatAddress?: string) => {
+      setSelectedChat(chatId);
+      if (chatAddress) {
+        setSelectedChatAddress(chatAddress);
+        loadMessages(chatAddress);
 
         // Mark messages as read
         if (address) {
@@ -268,13 +275,36 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
             await ChatService.markMessagesAsRead(chatId, address);
             // Reload chats to update unread counts
             loadChats();
+            // Update chat count in navigation
+            if (onChatCountChange) {
+              onChatCountChange();
+            }
           } catch (error) {
-            console.error('Error marking messages as read:', error);
+            console.error("Error marking messages as read:", error);
+          }
+        }
+      } else {
+        // Find chat by ID if address not provided
+        const chat = chats.find((c) => c.id === chatId);
+        if (chat) {
+          setSelectedChatAddress(chat.address);
+          loadMessages(chat.address);
+
+          // Mark messages as read
+          if (address) {
+            try {
+              await ChatService.markMessagesAsRead(chatId, address);
+              // Reload chats to update unread counts
+              loadChats();
+            } catch (error) {
+              console.error("Error marking messages as read:", error);
+            }
           }
         }
       }
-    }
-  }, [loadMessages, chats, address, loadChats, onChatCountChange]);
+    },
+    [loadMessages, chats, address, loadChats, onChatCountChange]
+  );
 
   // Initialize chats on mount and when address changes
   useEffect(() => {
@@ -286,7 +316,7 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
   useEffect(() => {
     if (!address) return;
 
-    const chatTargetStr = localStorage.getItem('chatTarget');
+    const chatTargetStr = localStorage.getItem("chatTarget");
     if (chatTargetStr) {
       const processChatTarget = async () => {
         try {
@@ -300,8 +330,9 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
           setChats(updatedChats);
 
           // Find and select the target chat
-          const targetChat = updatedChats.find(chat =>
-            chat.address.toLowerCase() === chatTarget.address.toLowerCase()
+          const targetChat = updatedChats.find(
+            (chat) =>
+              chat.address.toLowerCase() === chatTarget.address.toLowerCase()
           );
 
           if (targetChat) {
@@ -311,12 +342,11 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
           }
 
           // Clear the localStorage after processing
-          localStorage.removeItem('chatTarget');
-
+          localStorage.removeItem("chatTarget");
         } catch (error) {
-          console.error('Error processing chat target:', error);
-          toast.error('Failed to open chat');
-          localStorage.removeItem('chatTarget'); // Clear on error
+          console.error("Error processing chat target:", error);
+          showErrorToast("Failed to open chat", error);
+          localStorage.removeItem("chatTarget"); // Clear on error
         }
       };
 
@@ -328,39 +358,43 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
   useEffect(() => {
     if (!selectedChatAddress || !address) return;
 
-    const chat = chats.find(c => c.address === selectedChatAddress);
+    const chat = chats.find((c) => c.address === selectedChatAddress);
     if (!chat) return;
 
-    const subscription = ChatService.subscribeToMessages(chat.id, (newMessage) => {
-      setMessages(prev => {
-        // Check if message already exists to prevent duplicates
-        const messageExists = prev.some(msg => msg.id === newMessage.id);
-        if (messageExists) {
-          return prev;
-        }
-        return [...prev, newMessage];
-      });
-    });
+    const subscription = ChatService.subscribeToMessages(
+      chat.id,
+      (newMessage) => {
+        setMessages((prev) => {
+          // Check if message already exists to prevent duplicates
+          const messageExists = prev.some((msg) => msg.id === newMessage.id);
+          if (messageExists) {
+            return prev;
+          }
+          return [...prev, newMessage];
+        });
+      }
+    );
 
     return () => {
       subscription.unsubscribe();
     };
   }, [selectedChatAddress, address, chats]);
 
-  const filteredChats = chats.filter(chat =>
-    chat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    chat.address.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredChats = chats.filter(
+    (chat) =>
+      chat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      chat.address.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const selectedChatData = chats.find(chat => chat.id === selectedChat);
+  const selectedChatData = chats.find((chat) => chat.id === selectedChat);
 
   // Button handlers
   const handlePhoneCall = () => {
-    toast.error('Phone calls not allowed');
+    showErrorToast("Call failed", "Phone calls not allowed");
   };
 
   const handleVideoCall = () => {
-    toast.error('Video calls not allowed');
+    showErrorToast("Call failed", "Video calls not allowed");
   };
 
   const loadUserNFTsForSale = async (userAddress: string) => {
@@ -369,7 +403,7 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
       const userPosts = await getUserPosts(userAddress);
 
       // Filter only NFTs that are for sale
-      const nftsForSale = userPosts.filter(post => post.isForSale);
+      const nftsForSale = userPosts.filter((post) => post.isForSale);
 
       // Load IPFS metadata for each NFT
       const nftsWithMetadata = await Promise.all(
@@ -380,15 +414,15 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
               ...nft,
               title: metadata?.title || `NFT #${nft.tokenId}`,
               image: metadata?.image || null,
-              content: metadata?.content || nft.content
+              content: metadata?.content || nft.content,
             };
           } catch (error) {
-            console.error('Error loading NFT metadata:', error);
+            console.error("Error loading NFT metadata:", error);
             return {
               ...nft,
               title: `NFT #${nft.tokenId}`,
               image: null,
-              content: nft.content
+              content: nft.content,
             };
           }
         })
@@ -396,7 +430,7 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
 
       setUserNFTsForSale(nftsWithMetadata);
     } catch (error) {
-      console.error('Error loading user NFTs for sale:', error);
+      console.error("Error loading user NFTs for sale:", error);
       setUserNFTsForSale([]);
     } finally {
       setLoadingNFTs(false);
@@ -412,7 +446,7 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
 
   const handleBuyNFT = async (nft: Post) => {
     // Open buy modal with payment method selection
-    const event = new CustomEvent('openBuyModal', { detail: { post: nft } });
+    const event = new CustomEvent("openBuyModal", { detail: { post: nft } });
     window.dispatchEvent(event);
   };
 
@@ -422,16 +456,22 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success('Address copied to clipboard!');
+    showSuccessToast("Address copied to clipboard!");
   };
 
   const handleEmojiSelect = (emojiData: EmojiClickData) => {
-    setNewMessage(prev => prev + emojiData.emoji);
+    setNewMessage((prev) => prev + emojiData.emoji);
     setShowEmojiPicker(false);
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedChatAddress || !address || sendingMessage) return;
+    if (
+      !newMessage.trim() ||
+      !selectedChatAddress ||
+      !address ||
+      sendingMessage
+    )
+      return;
 
     const messageText = newMessage.trim();
     const tempId = `temp-${Date.now()}`;
@@ -442,19 +482,19 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
       senderId: address,
       content: messageText,
       timestamp: new Date().toISOString(),
-      type: 'text',
-      isRead: false
+      type: "text",
+      isRead: false,
     };
 
     // Add optimistic message immediately
-    setOptimisticMessages(prev => [...prev, optimisticMessage]);
-    setNewMessage('');
+    setOptimisticMessages((prev) => [...prev, optimisticMessage]);
+    setNewMessage("");
 
     // Update chat list with new last message
-    setChats(prevChats =>
-      prevChats.map(chat =>
+    setChats((prevChats) =>
+      prevChats.map((chat) =>
         chat.address === selectedChatAddress
-          ? { ...chat, lastMessage: messageText, timestamp: 'now' }
+          ? { ...chat, lastMessage: messageText, timestamp: "now" }
           : chat
       )
     );
@@ -466,19 +506,19 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
         address,
         selectedChatAddress,
         messageText,
-        'text'
+        "text"
       );
 
       // Remove optimistic message and load real messages
-      setOptimisticMessages(prev => prev.filter(msg => msg.id !== tempId));
+      setOptimisticMessages((prev) => prev.filter((msg) => msg.id !== tempId));
       await loadMessages(selectedChatAddress);
-      toast.success('Message sent!');
+      showSuccessToast("Message sent!");
     } catch (error) {
-      console.error('Error sending message:', error);
-      toast.error('Failed to send message');
+      console.error("Error sending message:", error);
+      showErrorToast("Failed to send message", error);
 
       // Remove failed optimistic message
-      setOptimisticMessages(prev => prev.filter(msg => msg.id !== tempId));
+      setOptimisticMessages((prev) => prev.filter((msg) => msg.id !== tempId));
 
       // Restore message text for retry
       setNewMessage(messageText);
@@ -496,7 +536,8 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
             <MessageCircle className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Connect Your Wallet</h3>
             <p className="text-muted-foreground mb-6">
-              Please connect your wallet to start chatting with other NFT creators.
+              Please connect your wallet to start chatting with other NFT
+              creators.
             </p>
             <ConnectWalletButton />
           </div>
@@ -520,7 +561,7 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
               <Plus className="w-4 h-4" />
             </Button>
           </div>
-          
+
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -557,7 +598,9 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
                 <Card
                   key={chat.id}
                   className={`p-3 cursor-pointer transition-colors hover:bg-muted/50 ${
-                    selectedChat === chat.id ? 'bg-primary/10 border-primary/50' : ''
+                    selectedChat === chat.id
+                      ? "bg-primary/10 border-primary/50"
+                      : ""
                   }`}
                   onClick={() => handleChatSelect(chat.id, chat.address)}
                 >
@@ -572,23 +615,28 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
                         <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
                       )}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex flex-col">
-                          <h4 className="font-medium truncate">{chat.name.replace('.stark', '.base.eth')}</h4>
+                          <h4 className="font-medium truncate">
+                            {chat.name.replace(".stark", ".base.eth")}
+                          </h4>
                           <span className="text-xs text-muted-foreground">
-                            {chat.address.slice(0, 6)}...{chat.address.slice(-4)}
+                            {chat.address.slice(0, 6)}...
+                            {chat.address.slice(-4)}
                           </span>
                         </div>
                         <ChatTimestamp timestamp={chat.timestamp} />
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">{chat.lastMessage}</p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {chat.lastMessage}
+                      </p>
                     </div>
-                    
+
                     {chat.unread > 0 && (
                       <Badge className="bg-green-500 hover:bg-green-600 text-white h-6 w-6 flex items-center justify-center text-xs p-0 rounded-full">
-                        {chat.unread > 99 ? '99+' : chat.unread}
+                        {chat.unread > 99 ? "99+" : chat.unread}
                       </Badge>
                     )}
                   </div>
@@ -619,11 +667,12 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
                 <div>
                   <h3 className="font-medium">{selectedChatData.name}</h3>
                   <p className="text-xs text-muted-foreground">
-                    {selectedChatData.address.slice(0, 6)}...{selectedChatData.address.slice(-4)}
+                    {selectedChatData.address.slice(0, 6)}...
+                    {selectedChatData.address.slice(-4)}
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="ghost" onClick={handlePhoneCall}>
                   <Phone className="w-4 h-4" />
@@ -657,20 +706,28 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
                 {[...messages, ...optimisticMessages].map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${message.senderId.toLowerCase() === address?.toLowerCase() ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${
+                      message.senderId.toLowerCase() === address?.toLowerCase()
+                        ? "justify-end"
+                        : "justify-start"
+                    }`}
                   >
                     <div
                       className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        message.senderId.toLowerCase() === address?.toLowerCase()
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
+                        message.senderId.toLowerCase() ===
+                        address?.toLowerCase()
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
                       }`}
                     >
                       <p className="text-sm">{message.content}</p>
                       <MessageTimestamp
                         timestamp={message.timestamp}
                         className={`text-xs mt-1 ${
-                          message.senderId.toLowerCase() === address?.toLowerCase() ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                          message.senderId.toLowerCase() ===
+                          address?.toLowerCase()
+                            ? "text-primary-foreground/70"
+                            : "text-muted-foreground"
                         }`}
                       />
                     </div>
@@ -700,7 +757,9 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
                   placeholder="Type a message..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && !e.shiftKey && handleSendMessage()
+                  }
                   className="flex-1"
                 />
                 <Button
@@ -721,7 +780,6 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
               <p className="text-muted-foreground mb-4">
                 Choose a conversation to start messaging
               </p>
-              
             </div>
           </div>
         )}
@@ -732,7 +790,11 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
         <div className="md:hidden fixed inset-0 bg-background z-50 flex flex-col">
           {/* Mobile Chat Header */}
           <div className="p-4 border-b border-border flex items-center gap-3">
-            <Button size="sm" variant="ghost" onClick={() => setSelectedChat(null)}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedChat(null)}
+            >
               ←
             </Button>
             <div className="flex items-center gap-3 flex-1">
@@ -744,10 +806,12 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
               <div>
                 <h3 className="font-medium">{selectedChatData?.name}</h3>
                 <p className="text-xs text-muted-foreground">
-                  {selectedChatData?.address ?
-                    `${selectedChatData.address.slice(0, 6)}...${selectedChatData.address.slice(-4)}` :
-                    ''
-                  }
+                  {selectedChatData?.address
+                    ? `${selectedChatData.address.slice(
+                        0,
+                        6
+                      )}...${selectedChatData.address.slice(-4)}`
+                    : ""}
                 </p>
               </div>
             </div>
@@ -778,20 +842,27 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
               {[...messages, ...optimisticMessages].map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.senderId.toLowerCase() === address?.toLowerCase() ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${
+                    message.senderId.toLowerCase() === address?.toLowerCase()
+                      ? "justify-end"
+                      : "justify-start"
+                  }`}
                 >
                   <div
                     className={`max-w-xs px-4 py-2 rounded-lg ${
                       message.senderId.toLowerCase() === address?.toLowerCase()
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
                     }`}
                   >
                     <p className="text-sm">{message.content}</p>
                     <MessageTimestamp
                       timestamp={message.timestamp}
                       className={`text-xs mt-1 ${
-                        message.senderId.toLowerCase() === address?.toLowerCase() ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                        message.senderId.toLowerCase() ===
+                        address?.toLowerCase()
+                          ? "text-primary-foreground/70"
+                          : "text-muted-foreground"
                       }`}
                     />
                   </div>
@@ -821,7 +892,9 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
                 placeholder="Type a message..."
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && !e.shiftKey && handleSendMessage()
+                }
                 className="flex-1"
               />
               <Button
@@ -866,14 +939,16 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
                   <div
                     className="text-sm font-mono cursor-pointer hover:bg-muted-foreground/10 p-2 rounded transition-colors"
                     onClick={() => {
-                      copyToClipboard(selectedChatData?.address || '');
-                      toast.success('Address copied!');
+                      copyToClipboard(selectedChatData?.address || "");
+                      toast.success("Address copied!");
                     }}
                   >
-                    {selectedChatData?.address ?
-                      `${selectedChatData.address.slice(0, 8)}...${selectedChatData.address.slice(-8)}` :
-                      ''
-                    }
+                    {selectedChatData?.address
+                      ? `${selectedChatData.address.slice(
+                          0,
+                          8
+                        )}...${selectedChatData.address.slice(-8)}`
+                      : ""}
                   </div>
                 </div>
 
@@ -882,8 +957,8 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
                   <span
                     className="text-sm font-mono flex-1 cursor-pointer hover:bg-muted-foreground/10 p-2 rounded break-all transition-colors"
                     onClick={() => {
-                      copyToClipboard(selectedChatData?.address || '');
-                      toast.success('Address copied!');
+                      copyToClipboard(selectedChatData?.address || "");
+                      toast.success("Address copied!");
                     }}
                   >
                     {selectedChatData?.address}
@@ -892,8 +967,8 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
                     size="sm"
                     variant="ghost"
                     onClick={() => {
-                      copyToClipboard(selectedChatData?.address || '');
-                      toast.success('Address copied!');
+                      copyToClipboard(selectedChatData?.address || "");
+                      toast.success("Address copied!");
                     }}
                   >
                     <Copy className="w-4 h-4" />
@@ -933,7 +1008,9 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
                 <div className="flex items-center justify-center py-8">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                    <p className="text-sm text-muted-foreground">Loading NFTs...</p>
+                    <p className="text-sm text-muted-foreground">
+                      Loading NFTs...
+                    </p>
                   </div>
                 </div>
               ) : userNFTsForSale.length === 0 ? (
@@ -942,7 +1019,9 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
                     <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
                     <h3 className="font-medium mb-1">No NFTs for Sale</h3>
                     <p className="text-sm text-muted-foreground">
-                      {selectedChatAddress?.slice(0, 6)}...{selectedChatAddress?.slice(-4)}.base.eth doesn't have any NFTs for sale
+                      {selectedChatAddress?.slice(0, 6)}...
+                      {selectedChatAddress?.slice(-4)}.base.eth doesn't have any
+                      NFTs for sale
                     </p>
                   </div>
                 </div>
@@ -958,7 +1037,9 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span className="text-muted-foreground">NFT #{nft.tokenId}</span>
+                          <span className="text-muted-foreground">
+                            NFT #{nft.tokenId}
+                          </span>
                         )}
                       </div>
                       <div className="space-y-1">
@@ -969,7 +1050,7 @@ const ChatsPage: React.FC<ChatsPageProps> = ({ onChatCountChange }) => {
                           {nft.price} ETH
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
-                          {nft.content || 'No description'}
+                          {nft.content || "No description"}
                         </p>
                         <Button
                           size="sm"

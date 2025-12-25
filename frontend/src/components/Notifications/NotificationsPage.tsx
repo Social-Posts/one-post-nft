@@ -18,7 +18,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useAccount } from 'wagmi';
-import { toast } from '@/components/ui/sonner';
+import { showErrorToast, showSuccessToast } from '@/utils/toastUtils';
 import { NotificationService } from '@/services/notificationService';
 import { formatTimeAgo } from '@/utils/timeUtils';
 import ConnectWalletButton from '@/components/Wallet/ConnectWalletButton';
@@ -58,7 +58,7 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
       setNotifications(data);
     } catch (error) {
       console.error('Error loading notifications:', error);
-      toast.error('Failed to load notifications');
+      showErrorToast('Failed to load notifications', error);
     } finally {
       setLoading(false);
     }
@@ -86,15 +86,14 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
   const markAllAsRead = async () => {
     if (!address) return;
 
-    try {
       await NotificationService.markAllAsRead(address);
       setNotifications(prev =>
         prev.map(notif => ({ ...notif, is_read: true }))
       );
-      toast.success('All notifications marked as read');
+      showSuccessToast('All notifications marked as read');
     } catch (error) {
       console.error('Error marking all as read:', error);
-      toast.error('Failed to mark all as read');
+      showErrorToast('Failed to mark all as read', error);
     }
   };
 
@@ -105,7 +104,7 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
       setNotifications(prev =>
         prev.filter(notif => notif.id !== notificationId)
       );
-      toast.success('Notification deleted');
+      showSuccessToast('Notification deleted');
 
       // Trigger count update in navigation
       if (onNotificationCountChange) {
@@ -113,7 +112,7 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onNavigate, onNot
       }
     } catch (error) {
       console.error('Error deleting notification:', error);
-      toast.error('Failed to delete notification');
+      showErrorToast('Failed to delete notification', error);
     }
   };
 

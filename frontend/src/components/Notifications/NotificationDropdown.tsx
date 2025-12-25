@@ -1,22 +1,34 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import React, { useState, useEffect, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Bell, Heart, ShoppingCart, MessageCircle, User, Copy } from 'lucide-react';
-import { useAccount } from 'wagmi';
-import { NotificationService, type Notification } from '@/services/notificationService';
-import { toast } from 'sonner';
+} from "@/components/ui/dropdown-menu";
+import {
+  Bell,
+  Heart,
+  ShoppingCart,
+  MessageCircle,
+  User,
+  Copy,
+} from "lucide-react";
+import { useAccount } from "wagmi";
+import {
+  NotificationService,
+  type Notification,
+} from "@/services/notificationService";
+import { showErrorToast, showSuccessToast } from "@/utils/toastUtils";
 
 interface NotificationDropdownProps {
   onNavigate?: (tab: string) => void;
 }
 
-const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onNavigate }) => {
+const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
+  onNavigate,
+}) => {
   const { address } = useAccount();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -30,12 +42,12 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onNavigate 
       setLoading(true);
       const [notifs, count] = await Promise.all([
         NotificationService.getUserNotifications(address),
-        NotificationService.getUnreadCount(address)
+        NotificationService.getUnreadCount(address),
       ]);
       setNotifications(notifs);
       setUnreadCount(count);
     } catch (error) {
-      console.error('Error loading notifications:', error);
+      console.error("Error loading notifications:", error);
     } finally {
       setLoading(false);
     }
@@ -53,11 +65,11 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onNavigate 
     const subscription = NotificationService.subscribeToNotifications(
       address,
       (newNotification) => {
-        setNotifications(prev => [newNotification, ...prev]);
-        setUnreadCount(prev => prev + 1);
+        setNotifications((prev) => [newNotification, ...prev]);
+        setUnreadCount((prev) => prev + 1);
 
         // Show toast for new notification
-        toast.success(newNotification.title);
+        showSuccessToast(newNotification.title);
       }
     );
 
@@ -71,34 +83,36 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onNavigate 
       // Mark as read if not already read
       if (!notification.is_read) {
         await NotificationService.markAsRead(notification.id);
-        setNotifications(prev =>
-          prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n)
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.id === notification.id ? { ...n, is_read: true } : n
+          )
         );
-        setUnreadCount(prev => Math.max(0, prev - 1));
+        setUnreadCount((prev) => Math.max(0, prev - 1));
       }
 
       // Handle navigation based on notification type
       switch (notification.type) {
-        case 'like':
+        case "like":
           // Navigate to profile or post
           if (onNavigate) {
-            onNavigate('Profile');
+            onNavigate("Profile");
           }
           break;
-        case 'chat':
+        case "chat":
           // Navigate to chat page
           if (onNavigate) {
-            onNavigate('Chats');
+            onNavigate("Chats");
           }
           break;
-        case 'buy':
-        case 'sell':
+        case "buy":
+        case "sell":
           // Just mark as read, no navigation
           break;
       }
     } catch (error) {
-      console.error('Error handling notification click:', error);
-      toast.error('Failed to process notification');
+      console.error("Error handling notification click:", error);
+      showErrorToast("Failed to process notification", error);
     }
   };
 
@@ -107,23 +121,23 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onNavigate 
 
     try {
       await NotificationService.markAllAsRead(address);
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
       setUnreadCount(0);
-      toast.success('All notifications marked as read');
+      showSuccessToast("All notifications marked as read");
     } catch (error) {
-      console.error('Error marking all as read:', error);
-      toast.error('Failed to mark notifications as read');
+      console.error("Error marking all as read:", error);
+      showErrorToast("Failed to mark notifications as read", error);
     }
   };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'like':
+      case "like":
         return <Heart className="w-4 h-4 text-red-500" />;
-      case 'buy':
-      case 'sell':
+      case "buy":
+      case "sell":
         return <ShoppingCart className="w-4 h-4 text-green-500" />;
-      case 'chat':
+      case "chat":
         return <MessageCircle className="w-4 h-4 text-blue-500" />;
       default:
         return <Bell className="w-4 h-4" />;
@@ -132,7 +146,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onNavigate 
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success('Address copied!');
+    showSuccessToast("Address copied!");
   };
 
   const formatAddress = (address: string) => {
@@ -140,22 +154,22 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onNavigate 
   };
 
   return (
-    <div className='mt-2 md:mt-20'>
+    <div className="mt-2 md:mt-20">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="relative">
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <Badge 
-                variant="destructive" 
+              <Badge
+                variant="destructive"
                 className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs p-0"
               >
-                {unreadCount > 99 ? '99+' : unreadCount}
+                {unreadCount > 99 ? "99+" : unreadCount}
               </Badge>
             )}
           </Button>
         </DropdownMenuTrigger>
-        
+
         <DropdownMenuContent align="end" className="w-80 p-0">
           <div className="p-4 border-b">
             <div className="flex items-center justify-between">
@@ -183,7 +197,9 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onNavigate 
                   <div
                     key={notification.id}
                     className={`p-3 hover:bg-muted cursor-pointer border-b last:border-b-0 ${
-                      !notification.is_read ? 'bg-blue-50 dark:bg-blue-950/20' : ''
+                      !notification.is_read
+                        ? "bg-blue-50 dark:bg-blue-950/20"
+                        : ""
                     }`}
                     onClick={() => handleNotificationClick(notification)}
                   >
@@ -191,7 +207,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onNavigate 
                       <div className="flex-shrink-0 mt-1">
                         {getNotificationIcon(notification.type)}
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <h4 className="text-sm font-medium truncate">
@@ -201,15 +217,15 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onNavigate 
                             <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
                           )}
                         </div>
-                        
+
                         <p className="text-sm text-muted-foreground mb-1">
                           {notification.message}
                         </p>
-                        
+
                         {notification.from_address && (
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <User className="w-3 h-3" />
-                            <span 
+                            <span
                               className="cursor-pointer hover:text-foreground"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -221,9 +237,11 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onNavigate 
                             <Copy className="w-3 h-3 ml-1" />
                           </div>
                         )}
-                        
+
                         <div className="text-xs text-muted-foreground mt-1">
-                          {NotificationService.formatTimestamp(notification.created_at)}
+                          {NotificationService.formatTimestamp(
+                            notification.created_at
+                          )}
                         </div>
                       </div>
                     </div>
