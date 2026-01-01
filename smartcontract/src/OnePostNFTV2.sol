@@ -146,29 +146,7 @@ contract OnePostNFTV2 is ERC721, Ownable, ReentrancyGuard, Pausable {
         whenNotPaused 
         returns (uint256) 
     {
-        uint256 tokenId = _tokenCounter++;
-        
-        _safeMint(msg.sender, tokenId);
-
-        posts[tokenId] = Post({
-            author: msg.sender,
-            currentOwner: msg.sender,
-            contentHash: contentHash,
-            timestamp: uint32(block.timestamp),
-            isForSale: price > 0,
-            price: price
-        });
-
-        _allTokenIds.push(tokenId);
-        _userTokenIds[msg.sender].push(tokenId);
-
-        if (price > 0) {
-            _addToForSale(tokenId);
-            emit PostListedForSale(tokenId, msg.sender, price);
-        }
-
-        emit PostCreated(tokenId, msg.sender, contentHash, price, uint32(block.timestamp));
-        return tokenId;
+        return _createPostInternal(msg.sender, contentHash, price);
     }
 
     /**
@@ -186,7 +164,7 @@ contract OnePostNFTV2 is ERC721, Ownable, ReentrancyGuard, Pausable {
         uint256[] memory tokenIds = new uint256[](contentHashes.length);
         
         for (uint256 i = 0; i < contentHashes.length; i++) {
-            tokenIds[i] = this.createPost(contentHashes[i], prices[i]);
+            tokenIds[i] = _createPostInternal(msg.sender, contentHashes[i], prices[i]);
         }
         
         return tokenIds;
@@ -325,6 +303,32 @@ contract OnePostNFTV2 is ERC721, Ownable, ReentrancyGuard, Pausable {
 
     // ============ Internal Functions ============
 
+    function _createPostInternal(address author, string memory contentHash, uint96 price) internal returns(uint256){
+        uint256 tokenId = _tokenCounter++;
+
+        _safeMint(author, tokenId);
+
+        posts[tokenId] = Post({
+            author: author,
+            currentOwner: author,
+            contentHash: contentHash,
+            timestamp: uint32(block.timestamp),
+            isForSale: price > 0,
+            price: price
+        });
+
+        _allTokenIds.push(tokenId);
+        _userTokenIds[author].push(tokenId);
+
+        if(price > 0){
+            _addToForSale(tokenId);
+            emit PostListedForSale(tokenId, author, price);
+        }
+
+        emit PostCreated(tokenId, author, contentHash, price, uint32(block.timestamp));
+        return tokenId;
+    }
+
     function _handleETHPayment(
         uint96 price,
         uint96 royaltyAmount,
@@ -388,6 +392,14 @@ contract OnePostNFTV2 is ERC721, Ownable, ReentrancyGuard, Pausable {
     }
 
     // ============ View Functions ============
+
+    function getPost(uint256 tokenId) external view returns (Post memory) {
+        return posts[tokenId];
+    }
+
+    function getSellProposals(uint256 proposalId) external view returns (SellProposal memory) {
+        return sellProposals[proposalId];
+    }    
 
     function getUserPosts(address user) external view returns (Post[] memory) {
         uint256[] memory tokenIds = _userTokenIds[user];
