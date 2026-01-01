@@ -75,7 +75,7 @@ contract OnePostNFTV2Test is Test {
         assertEq(tokenId, 1);
         assertEq(nft.ownerOf(tokenId), user1);
         
-        OnePostNFTV2.Post memory post = nft.posts(tokenId);
+        OnePostNFTV2.Post memory post = nft.getPost(tokenId);
         assertEq(post.author, user1);
         assertEq(post.currentOwner, user1);
         assertEq(post.contentHash, CONTENT_HASH_1);
@@ -90,7 +90,7 @@ contract OnePostNFTV2Test is Test {
         
         uint256 tokenId = nft.createPost(CONTENT_HASH_1, PRICE_1);
         
-        OnePostNFTV2.Post memory post = nft.posts(tokenId);
+        OnePostNFTV2.Post memory post = nft.getPost(tokenId);
         assertTrue(post.isForSale);
         assertEq(post.price, PRICE_1);
         
@@ -148,13 +148,13 @@ contract OnePostNFTV2Test is Test {
         
         assertEq(proposalId, 1);
         
-        OnePostNFTV2.SellProposal memory proposal = nft.sellProposals(proposalId);
+        OnePostNFTV2.SellProposal memory proposal = nft.getSellProposals(proposalId);
         assertEq(proposal.seller, user1);
         assertEq(proposal.price, PRICE_1);
         assertEq(proposal.tokenId, tokenId);
         assertTrue(proposal.isActive);
         
-        OnePostNFTV2.Post memory post = nft.posts(tokenId);
+        OnePostNFTV2.Post memory post = nft.getPost(tokenId);
         assertTrue(post.isForSale);
         assertEq(post.price, PRICE_1);
         
@@ -186,11 +186,23 @@ contract OnePostNFTV2Test is Test {
         
         nft.updatePrice(tokenId, PRICE_2);
         
-        OnePostNFTV2.Post memory post = nft.posts(tokenId);
+        OnePostNFTV2.Post memory post = nft.getPost(tokenId);
         assertEq(post.price, PRICE_2);
         assertTrue(post.isForSale);
         
         vm.stopPrank();
+    }
+
+    function testNonOwnerCannotUpdatePrice() public{
+        vm.startPrank(user1);
+        uint256 tokenId = nft.createPost(CONTENT_HASH_1, 0);
+        
+        nft.proposeSell(tokenId, PRICE_1);
+        vm.stopPrank();
+
+        vm.prank(user2);
+        vm.expectRevert(OnePostNFTV2.NotTokenOwner.selector);
+        nft.updatePrice(tokenId, PRICE_2);
     }
 
     function testCancelSell() public {
@@ -200,14 +212,26 @@ contract OnePostNFTV2Test is Test {
         
         nft.cancelSell(proposalId);
         
-        OnePostNFTV2.SellProposal memory proposal = nft.sellProposals(proposalId);
+        OnePostNFTV2.SellProposal memory proposal = nft.getSellProposals(proposalId);
         assertFalse(proposal.isActive);
         
-        OnePostNFTV2.Post memory post = nft.posts(tokenId);
+        OnePostNFTV2.Post memory post = nft.getPost(tokenId);
         assertFalse(post.isForSale);
         assertEq(post.price, 0);
         
         vm.stopPrank();
+    }
+
+    function testOnlySellerCanCancelSellProposal() public{
+        vm.startPrank(user1);
+        uint256 tokenId = nft.createPost(CONTENT_HASH_1, 0);
+        
+        uint256 proposalId = nft.proposeSell(tokenId, PRICE_1);
+        vm.stopPrank();
+
+        vm.prank(user2);
+        vm.expectRevert(OnePostNFTV2.NotProposalSeller.selector);
+        nft.cancelSell(proposalId);
     }
 
     // ============ Buying Tests (ETH) ============
@@ -229,7 +253,7 @@ contract OnePostNFTV2Test is Test {
         assertEq(nft.ownerOf(tokenId), user2);
         
         // Check post state
-        OnePostNFTV2.Post memory post = nft.posts(tokenId);
+        OnePostNFTV2.Post memory post = nft.getPost(tokenId);
         assertEq(post.currentOwner, user2);
         assertFalse(post.isForSale);
         assertEq(post.price, 0);
@@ -494,6 +518,12 @@ contract OnePostNFTV2Test is Test {
         nft.createPost(CONTENT_HASH_1, 0);
     }
 
+    function testNonOwnerCannotPause() public{
+        vm.prank(user1);
+        vm.expectRevert();
+        nft.pause();
+    }
+
     function testUnpause() public {
         vm.startPrank(owner);
         nft.pause();
@@ -502,6 +532,12 @@ contract OnePostNFTV2Test is Test {
         
         vm.prank(user1);
         nft.createPost(CONTENT_HASH_1, 0);
+    }
+
+    function testNonOwnerCannotUnpause() public{
+        vm.prank(user1);
+        vm.expectRevert();
+        nft.unpause();
     }
 
     // ============ ERC721 Compliance Tests ============
@@ -560,7 +596,7 @@ contract OnePostNFTV2Test is Test {
         
         assertEq(nft.ownerOf(tokenId), user1);
         
-        OnePostNFTV2.Post memory post = nft.posts(tokenId);
+        OnePostNFTV2.Post memory post = nft.getPost(tokenId);
         assertEq(post.contentHash, contentHash);
         assertEq(post.price, price);
         assertEq(post.isForSale, price > 0);
